@@ -174,6 +174,11 @@ struct scanner scanner_init(const char *source) {
     };
 }
 
+// Returns the scanner's source string
+const char *scanner_source(struct scanner *scanner) {
+    return scanner->source;
+}
+
 // Returns the current token and advances to the next
 struct token scanner_next(struct scanner *scanner) {
     _skipwhitespace(scanner);

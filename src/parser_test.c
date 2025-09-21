@@ -1,3 +1,4 @@
+#include <tinybasic/common.h>
 #include <tinybasic/parser.h>
 #include <tinybasic/scanner.h>
 
@@ -5,46 +6,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-
-
-
-struct parser {
-    struct scanner *scanner;
-    struct token current;
-};
-
-static bool _empty(struct parser *parser) {
-    return parser->current.kind == TOKEN_EOF;
-}
-
-static struct token _peek(struct parser *parser) {
-    return parser->current;
-}
-
-static struct token _next(struct parser *parser) {
-    struct token current = parser->current;
-    if (current.kind != TOKEN_EOF) {
-        parser->current = scanner_next(parser->scanner);
-    }
-    return current;
-}
-
-static bool _match(struct parser *parser, enum token_kind kind) {
-    return parser->current.kind == kind;
-}
-
-struct parser parser_init(struct scanner *scanner) {
-    struct token current = scanner_next(scanner);
-    return (struct parser){
-        .scanner = scanner,
-        .current = current,
-    };
-}
-
-bool parser_match_number(struct parser *parser) {
-    return _match(parser, TOKEN_NUMBER);
-}
-
 
 struct test_match_number {
     char *input;
@@ -82,50 +43,6 @@ int test_parse_match_number() {
     printf("test_parse_match_number: OK\n");
     return 0;
 
-}
-
-struct parser_num_line {
-    const char *line;
-    int number;
-};
-
-const char *scanner_source(struct scanner *scanner) {
-    return scanner->source;
-}
-
-enum {
-    RC_SUCCESS = 0,
-    RC_INVALID_NUMBER,
-    RC_EXPECTED_NUMBER,
-
-    MIN_NUMBER = 1,
-    MAX_NUMBER = 256,
-};
-
-int parser_number_line(struct parser *parser, struct parser_num_line *result) {
-    *result = (struct parser_num_line){}; //zero value
-
-    // Number
-    if (!_match(parser, TOKEN_NUMBER)) {
-        return RC_EXPECTED_NUMBER;
-    }
-
-    struct token tok = _next(parser);
-    const char *source = scanner_source(parser->scanner);
-    int number = atoi(&source[tok.pos]);
-    if (number < MIN_NUMBER || number > MAX_NUMBER) {
-        return RC_INVALID_NUMBER;
-    }   
-    
-    // Next token 
-    tok = _next(parser);
-    const char *line = &source[tok.pos];
-
-    *result = (struct parser_num_line){
-        .line = line,
-        .number = number,
-    };
-    return RC_SUCCESS;
 }
 
 struct test_number_line {

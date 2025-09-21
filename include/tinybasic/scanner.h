@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 enum token_kind {
     TOKEN_UNDEFINED = 0,
     TOKEN_NUMBER,
@@ -48,5 +46,9 @@ struct scanner {
 
 // Constructs a scanner for the given source string
 struct scanner scanner_init(const char *source);
+
 // Returns the current token and advances to the next
 struct token scanner_next(struct scanner *scanner);
+
+// Returns the scanner's source string
+const char *scanner_source(struct scanner *scanner); 
