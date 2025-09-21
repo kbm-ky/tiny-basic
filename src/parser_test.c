@@ -89,8 +89,8 @@ struct parser_num_line {
     int number;
 };
 
-const char *scanner_token_text(struct scanner *scanner, struct token token) {
-    return &scanner->source[token.pos];
+const char *scanner_source(struct scanner *scanner) {
+    return scanner->source;
 }
 
 enum {
@@ -111,14 +111,15 @@ int parser_number_line(struct parser *parser, struct parser_num_line *result) {
     }
 
     struct token tok = _next(parser);
-    int number = atoi(scanner_token_text(parser->scanner, tok));
+    const char *source = scanner_source(parser->scanner);
+    int number = atoi(&source[tok.pos]);
     if (number < MIN_NUMBER || number > MAX_NUMBER) {
         return RC_INVALID_NUMBER;
     }   
     
     // Next token 
     tok = _next(parser);
-    const char *line = scanner_token_text(parser->scanner, tok);
+    const char *line = &source[tok.pos];
 
     *result = (struct parser_num_line){
         .line = line,
