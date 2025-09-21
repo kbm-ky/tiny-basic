@@ -1,0 +1,1 @@
+gcc -o test.exe main.c && ./test.exe
