@@ -19,7 +19,7 @@ struct test {
     struct token want;
 };
 
-void test_scan_digit() {
+int test_scan_digit() {
 
     struct test tests[] = {
         { //0
@@ -71,20 +71,22 @@ void test_scan_digit() {
         struct scanner scanner = scanner_init(test.input);
         struct token got = scanner_next(&scanner);
         if (!token_equals(test.want, got)) {
-            printf("test_scan_digit[idx=%d]: want != got\n", i);
-            printf("want ");
+            printf("test_scan_digit[idx=%d]: want != got!!!\n", i);
+            printf("\twant ");
             token_print(test.want);
-            printf("\ngot ");
+            printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            exit(1);
+            // exit(1);
+            return 1;
         }
     }
 
     printf("test_scan_digit: OK\n");
+    return 0;
 }
 
-void test_scan_ident() {
+int test_scan_ident() {
 
     struct test tests[] = {
         { //0
@@ -208,20 +210,22 @@ void test_scan_ident() {
         struct scanner scanner = scanner_init(test.input);
         struct token got = scanner_next(&scanner);
         if (!token_equals(test.want, got)) {
-            printf("test_scan_ident[idx=%d]: want != got\n", i);
-            printf("want ");
+            printf("test_scan_ident[idx=%d]: want != got!!!\n", i);
+            printf("\twant ");
             token_print(test.want);
-            printf("\ngot ");
+            printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            exit(1);
+            // exit(1);
+            return 1;
         }
     }
 
     printf("test_scan_ident: OK\n");
+    return 0;
 }
 
-void test_scan_relop() {
+int test_scan_relop() {
 
     struct test tests[] = {
         { //0
@@ -289,20 +293,22 @@ void test_scan_relop() {
         struct scanner scanner = scanner_init(test.input);
         struct token got = scanner_next(&scanner);
         if (!token_equals(test.want, got)) {
-            printf("test_scan_relop[idx=%d]: want != got\n", i);
-            printf("want ");
+            printf("test_scan_relop[idx=%d]: want != got!!!\n", i);
+            printf("\twant ");
             token_print(test.want);
-            printf("\ngot ");
+            printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            exit(1);
+            // exit(1);
+            return 1;
         }
     }
 
     printf("test_scan_relop: OK\n");
+    return 0;
 }
 
-void test_scan_small_stuff() {
+int test_scan_small_stuff() {
 
     struct test tests[] = {
         { //0
@@ -346,24 +352,32 @@ void test_scan_small_stuff() {
         struct scanner scanner = scanner_init(test.input);
         struct token got = scanner_next(&scanner);
         if (!token_equals(test.want, got)) {
-            printf("test_scan_small_stuff[idx=%d]: want != got\n", i);
-            printf("want ");
+            printf("test_scan_small_stuff[idx=%d]: want != got!!!\n", i);
+            printf("\twant ");
             token_print(test.want);
-            printf("\ngot ");
+            printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            exit(1);
+            // exit(1);
+            return 1;
         }
     }
 
     printf("test_scan_small_stuff: OK\n");
+    return 0;
 }
 
 int main() {
-    test_scan_digit();
-    test_scan_ident();
-    test_scan_relop();
-    test_scan_small_stuff();
+    int count = 0;
+    count += test_scan_digit();
+    count += test_scan_ident();
+    count += test_scan_relop();
+    count += test_scan_small_stuff();
+
+    if (count > 0) {
+        printf("\n%d test(s) failed!!!\n", count);
+        return 1;
+    }
 
     printf("\nAll tests done.\n");
 }
