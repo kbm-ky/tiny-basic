@@ -128,6 +128,29 @@ static struct token _ident(struct scanner *scanner) {
     return _lookup_keyword(scanner);
 }
 
+static bool _isstring(char ch) {
+    return  (ch == ' ') || (ch == '!') ||
+            (ch >= '#' && ch <= '~');
+}
+
+static struct token _string(struct scanner *scanner) {
+    _next(scanner); //eat "
+
+    while (!_empty(scanner)) {
+        if (!_isstring(_peek(scanner))) break;
+        _next(scanner);
+    }
+
+    //Did we hit a " ?
+    if (!_empty(scanner) && _peek(scanner) == '\"') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_STRING);
+    }
+
+    // invalid/unbalanced string
+    return _make_token(scanner, TOKEN_INVALID_STRING);
+}
+
 struct scanner scanner_init(const char *source) {
     return (struct scanner){
         .source = source,
@@ -150,6 +173,8 @@ struct token scanner_next(struct scanner *scanner) {
         return _number(scanner);
     }  else if (isupper(ch)) {
         return _ident(scanner);
+    } else if (ch == '\"') { 
+        return _string(scanner);  
     } else if (ch == '=') {
         _next(scanner);
         return _make_token(scanner, TOKEN_EQUAL);

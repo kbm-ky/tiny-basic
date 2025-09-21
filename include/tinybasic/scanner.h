@@ -28,6 +28,8 @@ enum token_kind {
     TOKEN_NEQUAL,
     TOKEN_COMMA,
     TOKEN_NEWLINE,
+    TOKEN_STRING,
+    TOKEN_INVALID_STRING,
 
 
 

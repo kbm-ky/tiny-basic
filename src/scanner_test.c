@@ -77,7 +77,6 @@ int test_scan_digit() {
             printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            // exit(1);
             return 1;
         }
     }
@@ -216,7 +215,6 @@ int test_scan_ident() {
             printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            // exit(1);
             return 1;
         }
     }
@@ -299,7 +297,6 @@ int test_scan_relop() {
             printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            // exit(1);
             return 1;
         }
     }
@@ -358,12 +355,61 @@ int test_scan_small_stuff() {
             printf("\n\tgot ");
             token_print(got);
             printf("\n");
-            // exit(1);
             return 1;
         }
     }
 
     printf("test_scan_small_stuff: OK\n");
+    return 0;
+}
+
+int test_scan_string() {
+
+    struct test tests[] = {
+        { //0
+            .input = "\" foobar \"",
+            .want = {
+                .pos = 0,
+                .len = 10,
+                .kind = TOKEN_STRING,
+            },
+        },
+        { //1
+            .input = "  \"Hello!\"",
+            .want = {
+                .pos = 2,
+                .len = 8,
+                .kind = TOKEN_STRING,
+            },
+        },
+        { //2
+            .input = "\"unbalanced ",
+            .want = {
+                .pos = 0,
+                .len = 12,
+                .kind = TOKEN_INVALID_STRING,
+            },
+        },
+    };
+
+    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
+    
+    for (int i = 0; i < NUM_TESTS; i++) {
+        struct test test = tests[i];
+        struct scanner scanner = scanner_init(test.input);
+        struct token got = scanner_next(&scanner);
+        if (!token_equals(test.want, got)) {
+            printf("test_scan_string[idx=%d]: want != got!!!\n", i);
+            printf("\twant ");
+            token_print(test.want);
+            printf("\n\tgot ");
+            token_print(got);
+            printf("\n");
+            return 1;
+        }
+    }
+
+    printf("test_scan_string: OK\n");
     return 0;
 }
 
@@ -373,6 +419,7 @@ int main() {
     count += test_scan_ident();
     count += test_scan_relop();
     count += test_scan_small_stuff();
+    count == test_scan_string();
 
     if (count > 0) {
         printf("\n%d test(s) failed!!!\n", count);
