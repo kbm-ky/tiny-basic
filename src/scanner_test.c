@@ -430,6 +430,7 @@ int test_scan_string() {
 }
 
 int main() {
+    printf("scanner_test: ...\n\n");
     int count = 0;
     count += test_scan_digit();
     count += test_scan_ident();
@@ -438,9 +439,9 @@ int main() {
     count == test_scan_string();
 
     if (count > 0) {
-        printf("\n%d test(s) failed!!!\n", count);
+        printf("\nscanner_test: %d test(s) failed!!!\n\n\n", count);
         return 1;
     }
 
-    printf("\nAll tests done.\n");
+    printf("\nscanner_test: All tests done.\n\n\n");
 }
