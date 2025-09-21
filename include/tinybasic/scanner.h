@@ -20,6 +20,12 @@ enum token_kind {
     TOKEN_END,
     TOKEN_INVALID_IDENTIFIER,
     TOKEN_VARIABLE,
+    TOKEN_EQUAL,
+    TOKEN_LT,
+    TOKEN_LTE,
+    TOKEN_GT,
+    TOKEN_GTE,
+    TOKEN_NEQUAL,
 
 
 

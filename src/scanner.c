@@ -146,6 +146,35 @@ struct token scanner_next(struct scanner *scanner) {
         return _number(scanner);
     }  else if (isupper(ch)) {
         return _ident(scanner);
+    } else if (ch == '=') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_EQUAL);
+    } else if (ch == '<') { 
+        _next(scanner);
+        if (!_empty(scanner)) {
+            char ch = _peek(scanner);
+            if (ch == '=') {
+                _next(scanner);
+                return _make_token(scanner, TOKEN_LTE);
+            } else if (ch == '>') {
+                _next(scanner);
+                return _make_token(scanner, TOKEN_NEQUAL);
+            }
+        }
+        return _make_token(scanner, TOKEN_LT);
+    } else if (ch == '>') {
+        _next(scanner);
+        if (!_empty(scanner)) {
+            char ch = _peek(scanner);
+            if (ch == '=') {
+                _next(scanner);
+                return _make_token(scanner, TOKEN_GTE);
+            } else if (ch == '<') {
+                _next(scanner);
+                return _make_token(scanner, TOKEN_NEQUAL);
+            }
+        }
+        return _make_token(scanner, TOKEN_GT);
     } else {
         _next(scanner);
         return _make_token(scanner, TOKEN_UNDEFINED);

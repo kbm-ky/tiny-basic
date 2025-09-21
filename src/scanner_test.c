@@ -221,9 +221,91 @@ void test_scan_ident() {
     printf("test_scan_ident: OK\n");
 }
 
+void test_scan_relop() {
+
+    struct test tests[] = {
+        { //0
+            .input = "=",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_EQUAL,
+            },
+        },
+        { //1
+            .input = "<",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_LT,
+            },
+        },
+        { //2
+            .input = ">",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_GT,
+            },
+        },
+        { //3
+            .input = ">=",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_GTE,
+            },
+        },
+        { //4
+            .input = "><",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_NEQUAL,
+            },
+        },
+        { //5
+            .input = "<=",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_LTE,
+            },
+        },
+        { //6
+            .input = "<>",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_NEQUAL,
+            },
+        },
+    };
+
+    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
+    
+    for (int i = 0; i < NUM_TESTS; i++) {
+        struct test test = tests[i];
+        struct scanner scanner = scanner_init(test.input);
+        struct token got = scanner_next(&scanner);
+        if (!token_equals(test.want, got)) {
+            printf("test_scan_relop[idx=%d]: want != got\n", i);
+            printf("want ");
+            token_print(test.want);
+            printf("\ngot ");
+            token_print(got);
+            printf("\n");
+            exit(1);
+        }
+    }
+
+    printf("test_scan_relop: OK\n");
+}
+
 int main() {
     test_scan_digit();
     test_scan_ident();
+    test_scan_relop();
 
     printf("\nAll tests done.\n");
 }
