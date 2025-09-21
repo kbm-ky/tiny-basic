@@ -57,6 +57,73 @@ static struct token _number(struct scanner *scanner) {
     return _make_token(scanner, TOKEN_NUMBER);
 }
 
+struct keyword_entry {
+    const char *name;
+    enum token_kind kind;
+};
+
+static const struct keyword_entry keywords[] = {
+    { "PRINT", TOKEN_PRINT },
+    { "IF", TOKEN_IF },
+    { "THEN", TOKEN_THEN },
+    { "GOTO", TOKEN_GOTO },
+    { "INPUT", TOKEN_INPUT },
+    { "LET", TOKEN_LET },
+    { "GOSUB", TOKEN_GOSUB },
+    { "RETURN", TOKEN_RETURN },
+    { "CLEAR", TOKEN_CLEAR },
+    { "LIST", TOKEN_LIST },
+    { "RUN", TOKEN_RUN },
+    { "END", TOKEN_END },
+};
+
+enum { NUM_KEYWORDS = sizeof(keywords) / sizeof(struct keyword_entry), };
+
+static struct token _lookup_keyword(struct scanner *scanner) {
+    int len = scanner->pos - scanner->mark;
+    const char *tok = &scanner->source[scanner->mark];
+
+    for (int i = 0; i < NUM_KEYWORDS; i++) {
+        struct keyword_entry keyword_entry = keywords[i];
+        if (len != strlen(keyword_entry.name)) continue;
+        
+        //compare bytes
+        if (memcmp(keyword_entry.name, tok, len) == 0) {
+            //A match
+            return _make_token(scanner, keyword_entry.kind);
+        }
+    }
+
+    return _make_token(scanner, TOKEN_UNDEFINED);
+}
+
+static struct token _ident(struct scanner *scanner) {
+    _next(scanner);  //eat letter from scan_next
+
+    while (!_empty(scanner)) {
+        if (!isupper(_peek(scanner))) {
+            break;
+        }
+        _next(scanner);
+    }
+    
+    //ident cannot end with number
+    if (!_empty(scanner) && isdigit(_peek(scanner))) {
+        _next(scanner);  //eat offending digit
+        return _make_token(scanner, TOKEN_INVALID_IDENTIFIER);
+    }
+
+    //Figure out what this thing is
+    //If it is 1-char, then it's a variable, isupper ensures that it is A-Z
+    int len = scanner->pos - scanner->mark;
+    if (len == 1) {
+        return _make_token(scanner, TOKEN_VARIABLE);
+    }
+
+    //It could be a keyword, delegate that
+    return _lookup_keyword(scanner);
+}
+
 struct scanner scanner_init(const char *source) {
     return (struct scanner){
         .source = source,
@@ -77,6 +144,8 @@ struct token scanner_next(struct scanner *scanner) {
 
     if (isdigit(ch)) {
         return _number(scanner);
+    }  else if (isupper(ch)) {
+        return _ident(scanner);
     } else {
         _next(scanner);
         return _make_token(scanner, TOKEN_UNDEFINED);

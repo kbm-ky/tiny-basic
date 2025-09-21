@@ -14,14 +14,14 @@ void token_print(struct token a) {
     printf("token{pos:%d, len:%d, kind:%d}", a.pos, a.len, a.kind);
 }
 
-struct test_digit {
+struct test {
     char *input;
     struct token want;
 };
 
 void test_scan_digit() {
 
-    struct test_digit tests[] = {
+    struct test tests[] = {
         { //0
             .input = "0",
             .want = {
@@ -64,10 +64,10 @@ void test_scan_digit() {
         },
     };
 
-    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test_digit), };
+    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
     
     for (int i = 0; i < NUM_TESTS; i++) {
-        struct test_digit test = tests[i];
+        struct test test = tests[i];
         struct scanner scanner = scanner_init(test.input);
         struct token got = scanner_next(&scanner);
         if (!token_equals(test.want, got)) {
@@ -84,9 +84,146 @@ void test_scan_digit() {
     printf("test_scan_digit: OK\n");
 }
 
+void test_scan_ident() {
+
+    struct test tests[] = {
+        { //0
+            .input = " PRINT ",
+            .want = {
+                .pos = 1,
+                .len = 5,
+                .kind = TOKEN_PRINT,
+            },
+        },
+        { //1
+            .input = "IF",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_IF,
+            },
+        },
+        { //2
+            .input = "THEN",
+            .want = {
+                .pos = 0,
+                .len = 4,
+                .kind = TOKEN_THEN,
+            },
+        },
+        { //3
+            .input = "GOTO",
+            .want = {
+                .pos = 0,
+                .len = 4,
+                .kind = TOKEN_GOTO,
+            },
+        },
+        { //4
+            .input = "INPUT",
+            .want = {
+                .pos = 0,
+                .len = 5,
+                .kind = TOKEN_INPUT,
+            },
+        },
+        { //5
+            .input = "LET",
+            .want = {
+                .pos = 0,
+                .len = 3,
+                .kind = TOKEN_LET,
+            },
+        },
+        { //6
+            .input = "GOSUB",
+            .want = {
+                .pos = 0,
+                .len = 5,
+                .kind = TOKEN_GOSUB,
+            },
+        },
+        { //7
+            .input = "RETURN",
+            .want = {
+                .pos = 0,
+                .len = 6,
+                .kind = TOKEN_RETURN,
+            },
+        },
+        { //8
+            .input = "CLEAR",
+            .want = {
+                .pos = 0,
+                .len = 5,
+                .kind = TOKEN_CLEAR,
+            },
+        },
+        { //9
+            .input = "LIST",
+            .want = {
+                .pos = 0,
+                .len = 4,
+                .kind = TOKEN_LIST,
+            },
+        },
+        { //10
+            .input = "RUN",
+            .want = {
+                .pos = 0,
+                .len = 3,
+                .kind = TOKEN_RUN,
+            },
+        },
+        { //11
+            .input = "END",
+            .want = {
+                .pos = 0,
+                .len = 3,
+                .kind = TOKEN_END,
+            },
+        },
+        { //12
+            .input = "A",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_VARIABLE,
+            },
+        },
+        { //13
+            .input = "Z",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_VARIABLE,
+            },
+        },
+    };
+
+    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
+    
+    for (int i = 0; i < NUM_TESTS; i++) {
+        struct test test = tests[i];
+        struct scanner scanner = scanner_init(test.input);
+        struct token got = scanner_next(&scanner);
+        if (!token_equals(test.want, got)) {
+            printf("test_scan_ident[idx=%d]: want != got\n", i);
+            printf("want ");
+            token_print(test.want);
+            printf("\ngot ");
+            token_print(got);
+            printf("\n");
+            exit(1);
+        }
+    }
+
+    printf("test_scan_ident: OK\n");
+}
 
 int main() {
     test_scan_digit();
+    test_scan_ident();
 
     printf("\nAll tests done.\n");
 }
