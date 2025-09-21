@@ -26,6 +26,8 @@ enum token_kind {
     TOKEN_GT,
     TOKEN_GTE,
     TOKEN_NEQUAL,
+    TOKEN_COMMA,
+    TOKEN_NEWLINE,
 
 
 

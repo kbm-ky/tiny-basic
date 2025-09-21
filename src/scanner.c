@@ -22,10 +22,14 @@ static char _next(struct scanner *scanner) {
     return scanner->source[scanner->pos++];
 }
 
+static bool _isspace(char ch) {
+    return  (ch == ' ') || (ch == '\f') || (ch == '\t') || (ch == '\v');
+}
+
 static void _skipwhitespace(struct scanner *scanner) {
     while (!_empty(scanner)) {
         char ch = _peek(scanner);
-        if (!isspace(ch)) return;
+        if (!_isspace(ch)) return;
         _next(scanner);
     }
 }
@@ -175,6 +179,18 @@ struct token scanner_next(struct scanner *scanner) {
             }
         }
         return _make_token(scanner, TOKEN_GT);
+    } else if (ch == ',') { 
+        _next(scanner);
+        return _make_token(scanner, TOKEN_COMMA);
+    } else if (ch == '\r') {
+        _next(scanner);
+        if (!_empty(scanner) && _peek(scanner) == '\n') {
+            _next(scanner);
+        }  
+        return _make_token(scanner, TOKEN_NEWLINE);
+    } else if (ch == '\n') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_NEWLINE); 
     } else {
         _next(scanner);
         return _make_token(scanner, TOKEN_UNDEFINED);

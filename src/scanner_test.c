@@ -302,10 +302,68 @@ void test_scan_relop() {
     printf("test_scan_relop: OK\n");
 }
 
+void test_scan_small_stuff() {
+
+    struct test tests[] = {
+        { //0
+            .input = ",",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_COMMA,
+            },
+        },
+        { //1
+            .input = "\r",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_NEWLINE,
+            },
+        },
+        { //2
+            .input = "\r\n",
+            .want = {
+                .pos = 0,
+                .len = 2,
+                .kind = TOKEN_NEWLINE,
+            },
+        },
+        { //3
+            .input = "\n",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_NEWLINE,
+            },
+        },
+    };
+
+    enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
+    
+    for (int i = 0; i < NUM_TESTS; i++) {
+        struct test test = tests[i];
+        struct scanner scanner = scanner_init(test.input);
+        struct token got = scanner_next(&scanner);
+        if (!token_equals(test.want, got)) {
+            printf("test_scan_small_stuff[idx=%d]: want != got\n", i);
+            printf("want ");
+            token_print(test.want);
+            printf("\ngot ");
+            token_print(got);
+            printf("\n");
+            exit(1);
+        }
+    }
+
+    printf("test_scan_small_stuff: OK\n");
+}
+
 int main() {
     test_scan_digit();
     test_scan_ident();
     test_scan_relop();
+    test_scan_small_stuff();
 
     printf("\nAll tests done.\n");
 }
