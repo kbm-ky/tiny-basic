@@ -1,0 +1,1 @@
+rm *.exe 2> /dev/null
