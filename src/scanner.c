@@ -5,27 +5,32 @@
 #include <string.h>
 #include <ctype.h>
 
-
+// Checks if the scanner's input is empty/depleted
 static bool _empty(struct scanner *scanner) {
     return scanner->pos >= strlen(scanner->source);
 }
 
+// Sets a mark at the current scanner character position
 static int _mark(struct scanner *scanner) {
     return (scanner->mark = scanner->pos);
 }
 
+// Peeks at the current character
 static char _peek(struct scanner *scanner) {
     return scanner->source[scanner->pos];
 }
 
+// Returns the current character and advances the scanner position to the next
 static char _next(struct scanner *scanner) {
     return scanner->source[scanner->pos++];
 }
 
+// Returns true if ch is a 'whitespace' character, excluding CR LF
 static bool _isspace(char ch) {
     return  (ch == ' ') || (ch == '\f') || (ch == '\t') || (ch == '\v');
 }
 
+// Skips over whitespace
 static void _skipwhitespace(struct scanner *scanner) {
     while (!_empty(scanner)) {
         char ch = _peek(scanner);
@@ -34,6 +39,7 @@ static void _skipwhitespace(struct scanner *scanner) {
     }
 }
 
+// Constructs the specified token type from the current scanner state
 static struct token _make_token(struct scanner *scanner, enum token_kind kind) {
     int len = scanner->pos - scanner->mark;
     return (struct token) {
@@ -43,6 +49,7 @@ static struct token _make_token(struct scanner *scanner, enum token_kind kind) {
     };
 }
 
+// Scans a number: (0..9)+
 static struct token _number(struct scanner *scanner) {
     _next(scanner); //eat digit from scan_next
 
@@ -61,11 +68,13 @@ static struct token _number(struct scanner *scanner) {
     return _make_token(scanner, TOKEN_NUMBER);
 }
 
+// Utility struct for scanning language keywords
 struct keyword_entry {
     const char *name;
     enum token_kind kind;
 };
 
+// A table of keyword entries
 static const struct keyword_entry keywords[] = {
     { "PRINT", TOKEN_PRINT },
     { "IF", TOKEN_IF },
@@ -83,6 +92,8 @@ static const struct keyword_entry keywords[] = {
 
 enum { NUM_KEYWORDS = sizeof(keywords) / sizeof(struct keyword_entry), };
 
+// Checks if the in-process token is a keyword, otherwise returns
+// an undefined token
 static struct token _lookup_keyword(struct scanner *scanner) {
     int len = scanner->pos - scanner->mark;
     const char *tok = &scanner->source[scanner->mark];
@@ -101,6 +112,7 @@ static struct token _lookup_keyword(struct scanner *scanner) {
     return _make_token(scanner, TOKEN_UNDEFINED);
 }
 
+// Scans an 'ident' which could be a keyword or variable name (or undefined)
 static struct token _ident(struct scanner *scanner) {
     _next(scanner);  //eat letter from scan_next
 
@@ -128,11 +140,13 @@ static struct token _ident(struct scanner *scanner) {
     return _lookup_keyword(scanner);
 }
 
+// Returns true if ch is a valid string character
 static bool _isstring(char ch) {
     return  (ch == ' ') || (ch == '!') ||
             (ch >= '#' && ch <= '~');
 }
 
+// Scans a string literal, including its double-quotes ""
 static struct token _string(struct scanner *scanner) {
     _next(scanner); //eat "
 
@@ -151,6 +165,7 @@ static struct token _string(struct scanner *scanner) {
     return _make_token(scanner, TOKEN_INVALID_STRING);
 }
 
+// Constructs a scanner for the given source string
 struct scanner scanner_init(const char *source) {
     return (struct scanner){
         .source = source,
@@ -159,15 +174,16 @@ struct scanner scanner_init(const char *source) {
     };
 }
 
+// Returns the current token and advances to the next
 struct token scanner_next(struct scanner *scanner) {
     _skipwhitespace(scanner);
+    _mark(scanner);
 
     if (_empty(scanner)) {
         return _make_token(scanner, TOKEN_EOF);
     };
 
     char ch = _peek(scanner);
-    _mark(scanner);
 
     if (isdigit(ch)) {
         return _number(scanner);

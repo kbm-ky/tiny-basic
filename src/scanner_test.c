@@ -340,6 +340,22 @@ int test_scan_small_stuff() {
                 .kind = TOKEN_NEWLINE,
             },
         },
+        { //4
+            .input = " ",
+            .want = {
+                .pos = 1,
+                .len = 0,
+                .kind = TOKEN_EOF,
+            },
+        },
+        { //5
+            .input = "",
+            .want = {
+                .pos = 0,
+                .len = 0,
+                .kind = TOKEN_EOF,
+            },
+        },
     };
 
     enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };

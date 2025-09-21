@@ -31,8 +31,6 @@ enum token_kind {
     TOKEN_STRING,
     TOKEN_INVALID_STRING,
 
-
-
     TOKEN_EOF,
 };
 
@@ -48,5 +46,7 @@ struct scanner {
     int mark;
 };
 
+// Constructs a scanner for the given source string
 struct scanner scanner_init(const char *source);
+// Returns the current token and advances to the next
 struct token scanner_next(struct scanner *scanner);
