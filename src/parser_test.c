@@ -157,12 +157,18 @@ int test_parse_number_line_fail() {
 
 }
 
+int test_parse_statement() {
+    printf("test_parse_statement: NG\n");
+    return 1;
+}
+
 int main() {
     printf("parser_test: ...\n\n");
     int count = 0;
     count += test_parse_match_number();
     count += test_parse_number_line();
     count += test_parse_number_line_fail();
+    count += test_parse_statement();
 
     if (count > 0) {
         printf("\nparser_test: %d test(s) failed!!!\n\n\n", count);
