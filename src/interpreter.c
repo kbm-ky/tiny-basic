@@ -115,8 +115,7 @@ int _factor(struct interpreter *interpreter, uint16_t *value) {
     }
 
     while (_match(interpreter, TOKEN_STAR) || _match(interpreter, TOKEN_SLASH)) {
-        struct token token = _next(interpreter);
-        char op = interpreter->source[token.pos];
+        struct token op = _next(interpreter);
 
         uint16_t tmp = 0;
         rc = _primary(interpreter, &tmp);
@@ -125,7 +124,7 @@ int _factor(struct interpreter *interpreter, uint16_t *value) {
             return rc;
         }
 
-        if (op == '*') {
+        if (op.kind == TOKEN_STAR) {
             factor *= tmp;
         } else {
             factor /= tmp;
@@ -136,9 +135,52 @@ int _factor(struct interpreter *interpreter, uint16_t *value) {
     return RC_SUCCESS;
 }
 
+int _term(struct interpreter *interpreter, uint16_t *value) {
+
+    // leading +/- sign?
+    uint16_t sign = 1;
+    if (_match(interpreter, TOKEN_PLUS)) {
+        //just eat
+        _next(interpreter);
+    } else if(_match(interpreter, TOKEN_MINUS)) {
+        //eat
+        _next(interpreter);
+        sign = -1;
+    }
+
+    uint16_t term = 0;
+    int rc = _factor(interpreter, &term);
+    if (rc != RC_SUCCESS) {
+        *value = 0;
+        return rc;
+    }
+    term *= sign;
+
+    while (_match(interpreter, TOKEN_PLUS) || _match(interpreter, TOKEN_MINUS)) {
+        struct token op = _next(interpreter);
+
+        uint16_t tmp = 0;
+        rc = _factor(interpreter, &tmp);
+        if (rc != RC_SUCCESS) {
+            *value = 0;
+            return rc;
+        }
+
+        if (op.kind == TOKEN_PLUS) {
+            term += tmp;
+        } else {
+            term -= tmp;
+        }
+    }
+
+    *value = term;
+    return RC_SUCCESS;
+}
+
+
 int _eval(struct interpreter *interpreter, uint16_t *value) {
     
-    return _factor(interpreter, value);
+    return _term(interpreter, value);
 }
 
 int _print(struct interpreter *interpreter) {

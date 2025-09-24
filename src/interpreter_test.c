@@ -12,7 +12,7 @@ struct test {
     uint16_t want;
 };
 
-int test_interpreter() {
+int test_eval() {
 
     struct test tests[] = {
         { //0
@@ -39,6 +39,26 @@ int test_interpreter() {
             .input = "2 + 2",
             .want = 4,
         },
+        { //6
+            .input = "2 - 3",
+            .want = -1,
+        },
+        { //7
+            .input = "+2 - 3",
+            .want = -1,
+        },
+        { //8
+            .input = "-2 - 3",
+            .want = -5,
+        },
+        { //9
+            .input = "-2 * 3 - 1",
+            .want = -7,
+        },
+        { //10
+            .input = "-2 *( 3 - 1  )",
+            .want = -4,
+        },
     };
 
     enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
@@ -50,14 +70,14 @@ int test_interpreter() {
         int rc = _eval(&interpreter, &got);
         //check return code
         if (tests[i].want != got) {
-            printf("test_interpreter[idx=%d]: want != got!!!\n", i);
+            printf("test_eval[idx=%d]: want != got!!!\n", i);
             printf("\twant %d\n", tests[i].want);
             printf("\tgot %d\n", got);
             return 1;
         }
     }
 
-    printf("test_interpreter: OK\n");
+    printf("test_eval: OK\n");
     return 0;
 
 }
@@ -96,7 +116,7 @@ int test_number() {
 int main() {
     printf("interpreter_test: ...\n\n");
     int count = 0;
-    count += test_interpreter();
+    count += test_eval();
     count += test_number();
 
     if (count > 0) {
