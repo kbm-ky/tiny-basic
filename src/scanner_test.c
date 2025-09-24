@@ -356,6 +356,54 @@ int test_scan_small_stuff() {
                 .kind = TOKEN_EOF,
             },
         },
+        { //6
+            .input = "(",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_LPAREN,
+            },
+        },
+        { //7
+            .input = ")",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_RPAREN,
+            },
+        },
+        { //8
+            .input = "+",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_PLUS,
+            },
+        },
+        { //9
+            .input = "-",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_MINUS,
+            },
+        },
+        { //10
+            .input = "*",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_STAR,
+            },
+        },
+        { //11
+            .input = "/",
+            .want = {
+                .pos = 0,
+                .len = 1,
+                .kind = TOKEN_SLASH,
+            },
+        },
     };
 
     enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };

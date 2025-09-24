@@ -237,6 +237,24 @@ struct token scanner_next(struct scanner *scanner) {
     } else if (ch == '\n') {
         _next(scanner);
         return _make_token(scanner, TOKEN_NEWLINE); 
+    } else if (ch == '(') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_LPAREN);
+    } else if (ch == ')') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_RPAREN);
+    } else if (ch == '+') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_PLUS);
+    } else if (ch == '-') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_MINUS);
+    } else if (ch == '*') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_STAR);
+    } else if (ch == '/') {
+        _next(scanner);
+        return _make_token(scanner, TOKEN_SLASH);
     } else {
         _next(scanner);
         return _make_token(scanner, TOKEN_UNDEFINED);

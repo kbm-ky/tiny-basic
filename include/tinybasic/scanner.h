@@ -28,6 +28,12 @@ enum token_kind {
     TOKEN_NEWLINE,
     TOKEN_STRING,
     TOKEN_INVALID_STRING,
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
 
     TOKEN_EOF,
 };
