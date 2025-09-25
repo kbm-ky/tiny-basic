@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 enum { 
     MAX_BUFFER_SIZE = 80,
@@ -40,6 +41,18 @@ int editor_prompt(struct editor *editor, char **string) {
     return RC_SUCCESS;
 }
 
-void editor_puts(struct editor *editor, char *string) {
+void editor_println(struct editor *editor, char *string) {
     puts(string);
+}
+
+void editor_print(struct editor *editor, char *string) {
+    printf("%s", string);
+}
+
+int editor_printf(struct editor *editor, char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    int ret = vprintf(format, args);
+    va_end(args);
+    return ret;
 }

@@ -13,4 +13,8 @@ void editor_destroy(struct editor *editor);
 
 int editor_prompt(struct editor *editor, char **string);
 
-void editor_puts(struct editor *editor, char *string);
+void editor_println(struct editor *editor, char *string);
+
+void editor_print(struct editor *editor, char *string);
+
+int editor_printf(struct editor *editor, char *format, ...);

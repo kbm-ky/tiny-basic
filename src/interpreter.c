@@ -1,6 +1,7 @@
 #include <tinybasic/interpreter.h>
 #include <tinybasic/common.h>
 #include <tinybasic/scanner.h>
+#include <tinybasic/editor.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -184,14 +185,14 @@ int _eval(struct interpreter *interpreter, uint16_t *value) {
     return _term(interpreter, value);
 }
 
-static int _print(struct interpreter *interpreter) {
+static int _print(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat PRINT
 
     if (_match(interpreter, TOKEN_STRING)) {
         struct token string = _next(interpreter);
         const char *start = &interpreter->source[string.pos+1]; //peel off leading "
         int len = string.len - 2; //account for ""
-        printf("%.*s", len, start);
+        editor_printf(editor, "%.*s", len, start);
     } else {
         uint16_t value = 0;
         int rc = _eval(interpreter, &value);
@@ -199,19 +200,19 @@ static int _print(struct interpreter *interpreter) {
             return rc;
         }
         
-        printf("%d", (int)value);
+        editor_printf(editor, "%d", (int)value);
     }
 
     //while commas...
     while (_match(interpreter, TOKEN_COMMA)) {
         _next(interpreter); //eat ,
-        printf(", ");
+        editor_printf(editor, ", ");
 
         if (_match(interpreter, TOKEN_STRING)) {
             struct token string = _next(interpreter);
             const char *start = &interpreter->source[string.pos+1]; //peel off leading "
             int len = string.len - 2; //account for ""
-            printf("%.*s", len, start);
+            editor_printf(editor, "%.*s", len, start);
         } else {
             uint16_t value = 0;
             int rc = _eval(interpreter, &value);
@@ -219,25 +220,49 @@ static int _print(struct interpreter *interpreter) {
                 return rc;
             }
         
-            printf("%d", (int)value);
+            editor_printf(editor, "%d", (int)value);
         }
     }
+
+    editor_println(editor, "");
+
     return RC_SUCCESS;
 }
 
-// Interprets a statement 
-int interpret(struct interpreter *interpreter, const char *source) {
-    _reinit(interpreter, source);
 
-    struct token token = _peek(interpreter);
-    
-    if (token.kind == TOKEN_EOF) {
-        return RC_SUCCESS;
+
+static int _statement(struct interpreter *interpreter, struct editor *editor) {
+    if (_match(interpreter, TOKEN_PRINT)) {
+        return _print(interpreter, editor);
+    } else {
+        return RC_ERR_EXPECTED_STATEMENT;
     }
+}
 
-    if (token.kind == TOKEN_PRINT) {
-        return _print(interpreter);
+static int _line(struct interpreter *interpreter, struct editor *editor) {
+    return _statement(interpreter, editor);
+}
+
+static int interpret_line(struct interpreter *interpreter, struct editor *editor, char *line) {
+    _reinit(interpreter, line);
+    return _line(interpreter, editor);
+}
+
+int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
+    while (1) {
+        char *line = NULL;
+        int rc = editor_prompt(editor, &line);
+        if (rc == RC_ERR_INPUT_STRLEN_EXCEEDED) {
+            editor_printf(editor, "Input string length exceeded.  Retry...\n\n");
+            continue;
+        } else if (rc != RC_SUCCESS) {
+            editor_printf(editor, "Unrecoverable error\n\n");
+            return 1;
+        }
+
+        rc = interpret_line(interpreter, editor, line);
+        if (rc != RC_SUCCESS) {
+            editor_printf(editor, "ERROR: %d\n", rc);
+        }
     }
-
-    return RC_ERR_PLACEHOLDER;
 }

@@ -19,23 +19,9 @@ int main() {
     struct editor editor =  editor_init();
     struct interpreter interpreter = interpreter_init();
 
-    printf("Welcome to TINY-BASIC!\n");
+    editor_printf(&editor, "Welcome to TINY-BASIC!\n");
 
-    while (1) {
-        char *line = NULL;
-        int rc = editor_prompt(&editor, &line);
-        if (rc == RC_ERR_INPUT_STRLEN_EXCEEDED) {
-            printf("Input string length exceeded.  Retry...\n\n");
-            continue;
-        } else if (rc != RC_SUCCESS) {
-            printf("Unrecoverable error\n\n");
-            return 1;
-        }
-
-        // int rc = interpreter_interpret_line(&interpreter, &editor);
-        
-
-    }
+    int rc = interpreter_loop(&interpreter, &editor);
 
     editor_destroy(&editor);
 
