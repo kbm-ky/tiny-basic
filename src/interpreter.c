@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 // Prototypes
 int _eval(struct interpreter *interpreter, uint16_t *value);
@@ -74,7 +75,7 @@ static int _number(struct interpreter *interpreter, uint16_t *value) {
     return RC_SUCCESS;
 }
 
-int _grouping(struct interpreter *interpreter, uint16_t *value) {
+static int _grouping(struct interpreter *interpreter, uint16_t *value) {
     _next(interpreter); //eat (
         
     // eval the expression inside the parens
@@ -95,7 +96,7 @@ int _grouping(struct interpreter *interpreter, uint16_t *value) {
     return RC_SUCCESS;
 }
 
-int _primary(struct interpreter *interpreter, uint16_t *value) {
+static int _primary(struct interpreter *interpreter, uint16_t *value) {
     if (_match(interpreter, TOKEN_NUMBER)) {
         return _number(interpreter, value);
     } else if (_match(interpreter, TOKEN_LPAREN)) {
@@ -106,7 +107,7 @@ int _primary(struct interpreter *interpreter, uint16_t *value) {
     return RC_ERR_EXPECTED_EXPR;
 }
 
-int _factor(struct interpreter *interpreter, uint16_t *value) {
+static int _factor(struct interpreter *interpreter, uint16_t *value) {
     uint16_t factor = 0;
     int rc = _primary(interpreter, &factor);
     if (rc != RC_SUCCESS) {
@@ -135,7 +136,7 @@ int _factor(struct interpreter *interpreter, uint16_t *value) {
     return RC_SUCCESS;
 }
 
-int _term(struct interpreter *interpreter, uint16_t *value) {
+static int _term(struct interpreter *interpreter, uint16_t *value) {
 
     // leading +/- sign?
     uint16_t sign = 1;
@@ -183,11 +184,11 @@ int _eval(struct interpreter *interpreter, uint16_t *value) {
     return _term(interpreter, value);
 }
 
-int _print(struct interpreter *interpreter) {
+static int _print(struct interpreter *interpreter) {
     _next(interpreter); //eat PRINT
 
     if (_match(interpreter, TOKEN_STRING)) {
-        struct token string = _next(interpreter_init);
+        struct token string = _next(interpreter);
         const char *start = &interpreter->source[string.pos+1]; //peel off leading "
         int len = string.len - 2; //account for ""
         printf("%.*s", len, start);
@@ -207,7 +208,7 @@ int _print(struct interpreter *interpreter) {
         printf(", ");
 
         if (_match(interpreter, TOKEN_STRING)) {
-            struct token string = _next(interpreter_init);
+            struct token string = _next(interpreter);
             const char *start = &interpreter->source[string.pos+1]; //peel off leading "
             int len = string.len - 2; //account for ""
             printf("%.*s", len, start);
