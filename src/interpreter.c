@@ -186,8 +186,42 @@ int _eval(struct interpreter *interpreter, uint16_t *value) {
 int _print(struct interpreter *interpreter) {
     _next(interpreter); //eat PRINT
 
-    //TODO
-    return RC_ERR_PLACEHOLDER;
+    if (_match(interpreter, TOKEN_STRING)) {
+        struct token string = _next(interpreter_init);
+        const char *start = &interpreter->source[string.pos+1]; //peel off leading "
+        int len = string.len - 2; //account for ""
+        printf("%.*s", len, start);
+    } else {
+        uint16_t value = 0;
+        int rc = _eval(interpreter, &value);
+        if (rc != RC_SUCCESS) {
+            return rc;
+        }
+        
+        printf("%d", (int)value);
+    }
+
+    //while commas...
+    while (_match(interpreter, TOKEN_COMMA)) {
+        _next(interpreter); //eat ,
+        printf(", ");
+
+        if (_match(interpreter, TOKEN_STRING)) {
+            struct token string = _next(interpreter_init);
+            const char *start = &interpreter->source[string.pos+1]; //peel off leading "
+            int len = string.len - 2; //account for ""
+            printf("%.*s", len, start);
+        } else {
+            uint16_t value = 0;
+            int rc = _eval(interpreter, &value);
+            if (rc != RC_SUCCESS) {
+                return rc;
+            }
+        
+            printf("%d", (int)value);
+        }
+    }
+    return RC_SUCCESS;
 }
 
 // Interprets a statement 
