@@ -88,6 +88,7 @@ static const struct keyword_entry keywords[] = {
     { "LIST", TOKEN_LIST },
     { "RUN", TOKEN_RUN },
     { "END", TOKEN_END },
+    { "BYE", TOKEN_BYE },
 };
 
 enum { NUM_KEYWORDS = sizeof(keywords) / sizeof(struct keyword_entry), };

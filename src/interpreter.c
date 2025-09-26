@@ -363,6 +363,77 @@ static int _if(struct interpreter *interpreter, struct editor *editor) {
     }
 }
 
+static int _goto(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat GOTO
+
+    int16_t expr = 0;
+    int rc = _eval(interpreter, &expr);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    //do something here
+    editor_printf(editor, "TODO: GOTO %d\n", expr);
+
+    //use a sub interpreter?
+    return RC_SUCCESS;
+}
+
+static int _gosub(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat GOTO
+
+    int16_t expr = 0;
+    int rc = _eval(interpreter, &expr);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    //do something here
+    editor_printf(editor, "TODO: GOSUB %d\n", expr);
+
+    return RC_SUCCESS;
+}
+
+static int _return(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter);  //eat RETURN
+
+    editor_printf(editor, "TODO: RETURN to somewhere, somehow\n");
+    return RC_SUCCESS;
+}
+
+static int _clear(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat CLEAR
+
+    editor_printf(editor, "TODO: CLEAR program memory here\n");
+    return RC_SUCCESS;
+}
+
+static int _list(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat LIST
+
+    editor_printf(editor, "TODO: LIST program memory here\n");
+    return RC_SUCCESS;
+}
+
+static int _run(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat RUN
+
+    editor_printf(editor, "TODO: RUN program memory here\n");
+    return RC_SUCCESS;
+}
+
+static int _end(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat END
+
+    editor_printf(editor, "TODO: END does something here\n");
+    return RC_SUCCESS;
+}
+
+static int _bye(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat bye
+    return RC_BYE;
+}
+
 static int _statement(struct interpreter *interpreter, struct editor *editor) {
     if (_match(interpreter, TOKEN_PRINT)) {
         return _print(interpreter, editor);
@@ -370,6 +441,22 @@ static int _statement(struct interpreter *interpreter, struct editor *editor) {
         return  _let(interpreter, editor);
     } else if (_match(interpreter, TOKEN_IF)) {
         return _if(interpreter, editor);
+    }  else if (_match(interpreter, TOKEN_GOTO)) {
+        return _goto(interpreter, editor);
+    }  else if (_match(interpreter, TOKEN_GOSUB)) {
+        return _gosub(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_RETURN)) {
+        return _return(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_CLEAR)) {
+        return _clear(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_LIST)) {
+        return _list(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_RUN)) {
+        return _run(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_END)) {
+        return _end(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_BYE)) {
+        return _bye(interpreter, editor);
     } else {
         return RC_ERR_EXPECTED_STATEMENT;
     }
@@ -412,8 +499,13 @@ int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
         }
 
         rc = interpret_line(interpreter, editor, line);
-        if (rc != RC_SUCCESS) {
+        if (rc == RC_BYE) {
+            editor_printf(editor, "BYE!\n");
+            break;
+        } else if (rc != RC_SUCCESS) {
             editor_printf(editor, "ERROR: %d\n", rc);
         }
     }
+
+    return RC_SUCCESS;
 }

@@ -34,6 +34,7 @@ enum token_kind {
     TOKEN_MINUS,
     TOKEN_STAR,
     TOKEN_SLASH,
+    TOKEN_BYE,
 
     TOKEN_EOF,
 };
