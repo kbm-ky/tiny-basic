@@ -4,6 +4,7 @@
 #include <tinybasic/editor.h>
 #include <tinybasic/variables.h>
 #include <tinybasic/stack.h>
+#include <tinybasic/program.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -62,7 +63,7 @@ void _reinit(struct interpreter *interpreter, const char *source) {
 }
 
 // Constructs a interpreter
-struct interpreter interpreter_init(struct variables *variables) {
+struct interpreter interpreter_init(struct variables *variables, struct program *program) {
     return (struct interpreter){
         .source = "",
         .scanner = scanner_init(""),
@@ -71,6 +72,7 @@ struct interpreter interpreter_init(struct variables *variables) {
         .mode = INTERPRETER_MODE_DIRECT,
         .return_address = -1,
         .pc = 0,
+        .program = program,
     };
 }
 
@@ -509,6 +511,7 @@ static int _clear(struct interpreter *interpreter, struct editor *editor) {
     }
 
     //TODO: something to clear the program
+    program_clear_all(interpreter->program);
 
     return RC_SUCCESS;
 }
@@ -521,7 +524,12 @@ static int _list(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_INDIRECT;
     }
 
-    //TODO: something to list the program
+    for (int i = 0; i < PROGRAM_ROWS; i++) {
+        char *line = program_get_line(interpreter->program, i);
+        if (strlen(line) > 0) {
+            editor_printf(editor, "%d %s", i, line);
+        }
+    }
 
     return RC_SUCCESS;
 }
@@ -595,6 +603,39 @@ static int _statement(struct interpreter *interpreter, struct editor *editor) {
     }
 }
 
+static int _indirect_line(struct interpreter *interpreter, struct editor *editor) {
+    if (!_match(interpreter, TOKEN_NUMBER)) {
+        editor_printf(editor, "Expected NUMBER\n");
+        return RC_ERR_EXPECTED_NUMBER;
+    }
+    
+    int16_t value = 0;
+    int rc = _number(interpreter, &value);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    if (value > UINT8_MAX) {
+        editor_printf(editor, "Line number too large!\n");
+        return RC_ERR_LINE_NUM_TOO_BIG;
+    }
+
+    // if the line input is empty, clear the line
+    if (_match(interpreter, TOKEN_NEWLINE) || _match(interpreter, TOKEN_EOF)) {
+        program_clear_line(interpreter->program, (uint8_t)value);
+    } else {
+        //get next token and copy string from there into program
+        struct token token = _peek(interpreter);
+        const char *start = &interpreter->source[token.pos];
+        rc = program_write_line(interpreter->program, (uint8_t)value, start);
+        if (rc != RC_SUCCESS) {
+            editor_printf(editor, "Unable to write line to program!\n");
+            return rc;
+        }
+    }
+    return RC_SUCCESS;
+}
+
 static int _line(struct interpreter *interpreter, struct editor *editor) {
     if (_match(interpreter, TOKEN_NEWLINE) || _match(interpreter, TOKEN_EOF)) {
         return RC_SUCCESS;
@@ -624,6 +665,9 @@ static int _line(struct interpreter *interpreter, struct editor *editor) {
 
 static int interpret_line(struct interpreter *interpreter, struct editor *editor, char *line) {
     _reinit(interpreter, line);
+    if (_match(interpreter, TOKEN_NUMBER)) {
+        return _indirect_line(interpreter, editor);
+    }
     return _line(interpreter, editor);
 }
 

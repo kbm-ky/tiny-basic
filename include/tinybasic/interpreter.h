@@ -4,6 +4,7 @@
 #include <tinybasic/editor.h>
 #include <tinybasic/variables.h>
 #include <tinybasic/stack.h>
+#include <tinybasic/program.h>
 
 #include <stdbool.h>
 
@@ -23,11 +24,12 @@ struct interpreter {
     bool continuation;
     int pc;
     struct stack stack;
+    struct program *program;
 };
 
 
 // Constructs an interpreter
-struct interpreter interpreter_init(struct variables *variables);
+struct interpreter interpreter_init(struct variables *variables, struct program *program);
 
 // Cleans up interpreter
 void interpreter_destroy(struct interpreter *interpreter);

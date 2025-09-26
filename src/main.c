@@ -13,6 +13,7 @@
 #include <tinybasic/scanner.h>
 #include <tinybasic/variables.h>
 #include <tinybasic/editor.h>
+#include <tinybasic/program.h>
 
 
 int main() {
@@ -24,9 +25,16 @@ int main() {
         return 1;
     }
 
-    struct interpreter interpreter = interpreter_init(&variables);
+    struct program program = {};
+    rc = program_init(&program);
+    if (rc != RC_SUCCESS) {
+        printf("ERROR: Cannot create program!\n");
+        return 1;
+    }
 
-    editor_printf(&editor, "Welcome to TINY-BASIC!\n");
+    struct interpreter interpreter = interpreter_init(&variables, &program);
+
+    editor_printf(&editor, "Welcome to TINY-BASIC!\n\n");
     rc = interpreter_loop(&interpreter, &editor);
 
     interpreter_destroy(&interpreter);

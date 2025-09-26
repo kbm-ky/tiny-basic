@@ -11,11 +11,11 @@
 #include <string.h>
 #include <stdarg.h>
 
-enum { 
-    MAX_BUFFER_SIZE = 80,
-    MAX_INPUT_SIZE = 72,
-    MAX_INPUT_STRLEN = MAX_BUFFER_SIZE -1,
-};
+// enum { 
+//     MAX_BUFFER_SIZE = 80,
+//     MAX_INPUT_SIZE = 72,
+//     MAX_INPUT_STRLEN = MAX_BUFFER_SIZE -1,
+// };
 
 struct editor editor_init() {
     return (struct editor) {};
