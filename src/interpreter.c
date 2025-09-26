@@ -105,11 +105,25 @@ static int _grouping(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
+static int _variable(struct interpreter *interpreter, int16_t *value) {
+    struct token token = _next(interpreter);
+    int16_t tmp = 0;
+    int rc = variables_get(interpreter->variables, interpreter->source[token.pos], &tmp);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    *value = tmp;
+    return RC_SUCCESS;
+}
+
 static int _primary(struct interpreter *interpreter, int16_t *value) {
     if (_match(interpreter, TOKEN_NUMBER)) {
         return _number(interpreter, value);
     } else if (_match(interpreter, TOKEN_LPAREN)) {
         return _grouping(interpreter, value);
+    } else if (_match(interpreter, TOKEN_VARIABLE)) {
+        return _variable(interpreter, value);
     }
 
     *value = 0;
@@ -259,7 +273,10 @@ static int _let(struct interpreter *interpreter, struct editor *editor) {
         return rc;
     }
 
-    editor_printf(editor, "Saving '%c' = %d goes here\n", interpreter->source[var.pos], value);
+    rc = variables_set(interpreter->variables, interpreter->source[var.pos], value);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
 
     //do the thing
     return RC_SUCCESS;

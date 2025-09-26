@@ -13,14 +13,14 @@ int test_set_value() {
         return 1;
     }
 
-    uint16_t in_value = 88;
+    int16_t in_value = 88;
     rc = variables_set(&variables, 'Z', in_value);
     if (rc != RC_SUCCESS) {
         printf("test_set_value: want %d, got %d\n", RC_SUCCESS, rc);
         return 1;
     }
 
-    uint16_t out_value = 0;
+    int16_t out_value = 0;
     rc = variables_get(&variables, 'Z', &out_value);
     if (rc != RC_SUCCESS) {
         printf("test_set_value: unable to get value!\n");
@@ -71,7 +71,7 @@ int test_get_value_undefined() {
         return 1;
     }
 
-    uint16_t value = 0;
+    int16_t value = 0;
     rc = variables_get(&variables, 'A', &value);
     if (rc != RC_ERR_VAR_NOT_DEFINED) {
         printf("test_get_value_undefined: expected undefined error!!\n");
@@ -92,7 +92,7 @@ int test_get_value_bad_index() {
         return 1;
     }
 
-    uint16_t value = 0;
+    int16_t value = 0;
     rc = variables_get(&variables, 'a', &value);
     if (rc != RC_ERR_INVALID_VAR_INDEX) {
         printf("test_get_value_bad_index: expected index error!!\n");

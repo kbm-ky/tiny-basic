@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 struct variables {
-    uint16_t *data;
+    int16_t *data;
     uint32_t defined;
 };
 
@@ -12,6 +12,6 @@ int variables_init(struct variables *variables);
 // Destroy variables
 void variables_destroy(struct variables *variables);
 // Set variable value
-int variables_set(struct variables *variables, char name, uint16_t value);
+int variables_set(struct variables *variables, char name, int16_t value);
 // Get variable value
-int variables_get(struct variables *variables, char name, uint16_t *value);
+int variables_get(struct variables *variables, char name, int16_t *value);

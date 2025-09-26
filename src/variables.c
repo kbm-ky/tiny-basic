@@ -7,14 +7,14 @@
 enum { NUM_VARIABLES = 26, };
 
 struct variables {
-    uint16_t *data;
+    int16_t *data;
     uint32_t defined;
 };
 
 int variables_init(struct variables *variables) {
     assert(variables);
 
-    uint16_t *data = calloc(NUM_VARIABLES, sizeof(uint16_t));
+    int16_t *data = calloc(NUM_VARIABLES, sizeof(int16_t));
     if (data == NULL) {
         return RC_ERR_UNABLE_TO_ALLOC;
     }
@@ -44,7 +44,7 @@ static int _name_to_index(char name) {
     return index;
 }
 
-int variables_set(struct variables *variables, char name, uint16_t value) {
+int variables_set(struct variables *variables, char name, int16_t value) {
     assert(variables);
 
     int index = _name_to_index(name);
@@ -58,7 +58,7 @@ int variables_set(struct variables *variables, char name, uint16_t value) {
     return RC_SUCCESS;
 }
 
-int variables_get(struct variables *variables, char name, uint16_t *value) {
+int variables_get(struct variables *variables, char name, int16_t *value) {
     assert(variables);
     assert(value);
 
@@ -68,7 +68,7 @@ int variables_get(struct variables *variables, char name, uint16_t *value) {
         return RC_ERR_INVALID_VAR_INDEX;
     }
 
-    uint32_t defined = variables->defined & (1 << index);
+    int32_t defined = variables->defined & (1 << index);
     if (!defined) {
         *value = 0;
         return RC_ERR_VAR_NOT_DEFINED;
