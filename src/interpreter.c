@@ -77,6 +77,10 @@ void interpreter_destroy(struct interpreter *interpreter) {
 
 }
 
+struct interpreter _subinterpreter(struct interpreter *interpreter) {
+    return *interpreter;
+}
+
 static int _number(struct interpreter *interpreter, int16_t *value) {
     if (!_match(interpreter, TOKEN_NUMBER)) {
         *value = 0;
@@ -390,16 +394,60 @@ static int _input(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_EXPECTED_VARIABLE;
     }
     struct token var = _next(interpreter);
-    editor_printf(editor, "TODO: INPUT var %c\n", interpreter->source[var.pos]);
+
+    //The ole I painted myself into a corner so I'll use a subinterpreter trick
+
+    struct interpreter sub = _subinterpreter(interpreter);
+    struct editor subeditor = editor_init();
+    char *input_line = NULL;
+    int16_t value = 0;
+
+    char var_name = interpreter->source[var.pos];
+    int rc = editor_prompt(&subeditor, &input_line, "%c = ? ", var_name);
+    if (rc != RC_SUCCESS) {
+        editor_destroy(&subeditor);
+        interpreter_destroy(&sub);
+        return rc;
+    }
+
+    _reinit(&sub, input_line);
+    rc = _eval(&sub, &value);
+    if (rc != RC_SUCCESS) {
+        editor_destroy(&subeditor);
+        interpreter_destroy(&sub);
+        return rc;
+    }
+
+    variables_set(interpreter->variables, var_name, value);
 
     while (_match(interpreter, TOKEN_COMMA)) {
         _next(interpreter);
         if (!_match(interpreter, TOKEN_VARIABLE)) {
+            editor_destroy(&subeditor);
+            interpreter_destroy(&sub);
             return RC_ERR_EXPECTED_VARIABLE;
         }
         struct token var = _next(interpreter);
-        editor_printf(editor, "TODO: INPUT var %c\n", interpreter->source[var.pos]);
+        char var_name = interpreter->source[var.pos];
+        int rc = editor_prompt(&subeditor, &input_line, "%c = ? ", var_name);
+        if (rc != RC_SUCCESS) {
+            editor_destroy(&subeditor);
+            interpreter_destroy(&sub);
+            return rc;
+        }
+
+        _reinit(&sub, input_line);
+        rc = _eval(&sub, &value);
+        if (rc != RC_SUCCESS) {
+            editor_destroy(&subeditor);
+            interpreter_destroy(&sub);
+            return rc;
+        }
+        variables_set(interpreter->variables, var_name, value);
     }
+
+    editor_destroy(&subeditor);
+    interpreter_destroy(&sub);
 
     return RC_SUCCESS;
 }
@@ -526,7 +574,7 @@ static int interpret_line(struct interpreter *interpreter, struct editor *editor
 int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
     while (1) {
         char *line = NULL;
-        int rc = editor_prompt(editor, &line);
+        int rc = editor_prompt(editor, &line, "> ");
         if (rc == RC_ERR_INPUT_STRLEN_EXCEEDED) {
             editor_printf(editor, "Input string length exceeded.  Retry...\n\n");
             continue;

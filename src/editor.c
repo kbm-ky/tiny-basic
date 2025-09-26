@@ -28,8 +28,11 @@ void editor_destroy(struct editor *editor) {
     }
 }
 
-int editor_prompt(struct editor *editor, char **string) {
-    printf("> ");
+int editor_prompt(struct editor *editor, char **string, char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
     ssize_t result = getline(&editor->line, &editor->line_len, stdin);
     if (result == -1) {
         return RC_ERR_UNABLE_TO_GETLINE;
