@@ -510,7 +510,6 @@ static int _clear(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_INDIRECT;
     }
 
-    //TODO: something to clear the program
     program_clear_all(interpreter->program);
 
     return RC_SUCCESS;
@@ -637,14 +636,6 @@ static int _indirect_line(struct interpreter *interpreter, struct editor *editor
 }
 
 static int _line(struct interpreter *interpreter, struct editor *editor) {
-    if (_match(interpreter, TOKEN_NEWLINE) || _match(interpreter, TOKEN_EOF)) {
-        return RC_SUCCESS;
-    }
-    
-    //ignore number_statement check if continuation
-    //but until then
-    interpreter->continuation = false; //This feels like a bug waiting to happen, keep your eyes peeled
-    
     int rc = _statement(interpreter, editor);
     if (rc != RC_SUCCESS) {
         return rc;
@@ -665,6 +656,10 @@ static int _line(struct interpreter *interpreter, struct editor *editor) {
 
 static int interpret_line(struct interpreter *interpreter, struct editor *editor, char *line) {
     _reinit(interpreter, line);
+    if (_match(interpreter, TOKEN_NEWLINE) || _match(interpreter, TOKEN_EOF)) {
+        return RC_SUCCESS;
+    }
+
     if (_match(interpreter, TOKEN_NUMBER)) {
         return _indirect_line(interpreter, editor);
     }
@@ -692,6 +687,7 @@ int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
         }
         
         while (interpreter->continuation) {
+            interpreter->continuation = false;
             rc = _line(interpreter, editor);
             if (rc == RC_BYE) {
                 editor_printf(editor, "BYE!\n");
