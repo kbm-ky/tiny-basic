@@ -11,6 +11,7 @@
 
 // Prototypes
 int _eval(struct interpreter *interpreter, int16_t *value);
+static int _statement(struct interpreter *interpreter, struct editor *editor);
 
 // Checks if the stream of tokens is empty/depleted
 static bool _empty(struct interpreter *interpreter) {
@@ -34,6 +35,22 @@ static struct token _next(struct interpreter *interpreter) {
 // Checks if the current token matches the specified token kind
 static bool _match(struct interpreter *interpreter, enum token_kind kind) {
     return interpreter->current.kind == kind;
+}
+
+static bool _match_relop(struct interpreter *interpreter) {
+    struct token tok = _peek(interpreter);
+    switch (tok.kind) {
+        case TOKEN_EQUAL:
+        case TOKEN_NEQUAL:
+        case TOKEN_LT:
+        case TOKEN_LTE:
+        case TOKEN_GT:
+        case TOKEN_GTE:
+            return true;
+        
+        default:
+            return false;
+    }
 }
 
 // Re-initialize the scanner and current token with the new source string
@@ -282,11 +299,77 @@ static int _let(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+static int _if(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat IF
+
+    int16_t left_expr = 0;
+    int rc = _eval(interpreter, &left_expr);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    if (!_match_relop(interpreter)) {
+        return RC_ERR_EXPECTED_RELOP;
+    }
+    struct token relop = _next(interpreter);
+
+    int16_t right_expr = 0;
+    rc = _eval(interpreter, &right_expr);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    bool condition = false;
+    switch (relop.kind) {
+        case TOKEN_EQUAL:
+            condition = left_expr == right_expr;
+            break;
+
+        case TOKEN_NEQUAL:
+            condition = left_expr != right_expr;
+            break;
+
+        case TOKEN_LT:
+            condition = left_expr < right_expr;
+            break;
+
+        case TOKEN_LTE:
+            condition = left_expr <= right_expr;
+            break;
+
+        case TOKEN_GT:
+            condition = left_expr > right_expr;
+            break;
+
+        case TOKEN_GTE:
+            condition = left_expr >= right_expr;
+            break;
+    } 
+
+    //eat THEN
+    if (!_match(interpreter, TOKEN_THEN)) {
+        return RC_ERR_EXPECTED_THEN;
+    }
+    _next(interpreter);
+
+    if (condition) {
+        return _statement(interpreter, editor);
+    } else {
+        //eat all tokens until end of line....even if syntax is wrong
+        while (!_match(interpreter, TOKEN_NEWLINE)) {
+            _next(interpreter);
+        }
+        return RC_SUCCESS;
+    }
+}
+
 static int _statement(struct interpreter *interpreter, struct editor *editor) {
     if (_match(interpreter, TOKEN_PRINT)) {
         return _print(interpreter, editor);
     } else if (_match(interpreter, TOKEN_LET)) {
         return  _let(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_IF)) {
+        return _if(interpreter, editor);
     } else {
         return RC_ERR_EXPECTED_STATEMENT;
     }
