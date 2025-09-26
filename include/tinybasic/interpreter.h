@@ -3,6 +3,7 @@
 #include <tinybasic/scanner.h>
 #include <tinybasic/editor.h>
 #include <tinybasic/variables.h>
+#include <tinybasic/stack.h>
 
 #include <stdbool.h>
 
@@ -21,6 +22,7 @@ struct interpreter {
     int return_address;
     bool continuation;
     int pc;
+    struct stack stack;
 };
 
 

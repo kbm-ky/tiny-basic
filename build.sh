@@ -1,1 +1,1 @@
-gcc -g -o main.exe src/main.c src/editor.c src/interpreter.c src/scanner.c src/variables.c -I ./include
+gcc -g -o main.exe src/main.c src/editor.c src/interpreter.c src/scanner.c src/variables.c src/stack.c -I ./include

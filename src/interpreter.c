@@ -3,6 +3,7 @@
 #include <tinybasic/scanner.h>
 #include <tinybasic/editor.h>
 #include <tinybasic/variables.h>
+#include <tinybasic/stack.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -471,7 +472,11 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     }
 
     //set program counter and return address
-    interpreter->return_address = interpreter->pc; //<This is wrong, may need stack
+    rc = stack_push(&interpreter->stack, interpreter->pc);
+    if (rc != RC_SUCCESS) {
+        editor_printf(editor, "Stack overflow!");
+        return rc;
+    }
     interpreter->pc = expr;
 
     return RC_SUCCESS;
@@ -485,7 +490,13 @@ static int _return(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_DIRECT;
     }
 
-    //TODO: some sort of stack here
+    uint8_t value = 0;
+    int rc = stack_pop(&interpreter->stack, &value);
+    if (rc != RC_SUCCESS) {
+        editor_printf(editor, "Stack underflow!\n");
+        return rc;
+    }
+    interpreter->pc = value;
     return RC_SUCCESS;
 }
 
@@ -591,7 +602,7 @@ static int _line(struct interpreter *interpreter, struct editor *editor) {
     
     //ignore number_statement check if continuation
     //but until then
-    interpreter->continuation = false;
+    interpreter->continuation = false; //This feels like a bug waiting to happen, keep your eyes peeled
     
     int rc = _statement(interpreter, editor);
     if (rc != RC_SUCCESS) {
