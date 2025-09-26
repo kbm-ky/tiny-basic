@@ -379,6 +379,27 @@ static int _goto(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+static int _input(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat INPUT
+
+    if (!_match(interpreter, TOKEN_VARIABLE)) {
+        return RC_ERR_EXPECTED_VARIABLE;
+    }
+    struct token var = _next(interpreter);
+    editor_printf(editor, "TODO: INPUT var %c\n", interpreter->source[var.pos]);
+
+    while (_match(interpreter, TOKEN_COMMA)) {
+        _next(interpreter);
+        if (!_match(interpreter, TOKEN_VARIABLE)) {
+            return RC_ERR_EXPECTED_VARIABLE;
+        }
+        struct token var = _next(interpreter);
+        editor_printf(editor, "TODO: INPUT var %c\n", interpreter->source[var.pos]);
+    }
+
+    return RC_SUCCESS;
+}
+
 static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat GOTO
 
@@ -435,29 +456,33 @@ static int _bye(struct interpreter *interpreter, struct editor *editor) {
 }
 
 static int _statement(struct interpreter *interpreter, struct editor *editor) {
-    if (_match(interpreter, TOKEN_PRINT)) {
+    struct token tok = _peek(interpreter);
+    switch (tok.kind) {
+    case TOKEN_PRINT:
         return _print(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_LET)) {
+    case TOKEN_LET:
         return  _let(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_IF)) {
+    case TOKEN_IF:
         return _if(interpreter, editor);
-    }  else if (_match(interpreter, TOKEN_GOTO)) {
+    case TOKEN_GOTO:
         return _goto(interpreter, editor);
-    }  else if (_match(interpreter, TOKEN_GOSUB)) {
+    case TOKEN_INPUT:
+        return _input(interpreter, editor);
+    case TOKEN_GOSUB:
         return _gosub(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_RETURN)) {
+    case TOKEN_RETURN:
         return _return(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_CLEAR)) {
+    case TOKEN_CLEAR:
         return _clear(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_LIST)) {
+    case TOKEN_LIST:
         return _list(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_RUN)) {
+    case TOKEN_RUN:
         return _run(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_END)) {
+    case TOKEN_END:
         return _end(interpreter, editor);
-    } else if (_match(interpreter, TOKEN_BYE)) {
+    case TOKEN_BYE:
         return _bye(interpreter, editor);
-    } else {
+    default:
         return RC_ERR_EXPECTED_STATEMENT;
     }
 }
