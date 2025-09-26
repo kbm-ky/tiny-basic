@@ -68,6 +68,8 @@ struct interpreter interpreter_init(struct variables *variables) {
         .current = TOKEN_EOF,
         .variables = variables,
         .mode = INTERPRETER_MODE_DIRECT,
+        .return_address = -1,
+        .pc = 0,
     };
 }
 
@@ -353,14 +355,16 @@ static int _if(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter);
 
     if (condition) {
-        return _statement(interpreter, editor);
+        // return _statement(interpreter, editor);
+        interpreter->continuation = true;
     } else {
         //eat all tokens until end of line....even if syntax is wrong
         while (!_match(interpreter, TOKEN_NEWLINE)) {
             _next(interpreter);
         }
-        return RC_SUCCESS;
     }
+
+    return RC_SUCCESS;
 }
 
 static int _goto(struct interpreter *interpreter, struct editor *editor) {
@@ -492,10 +496,18 @@ static int _line(struct interpreter *interpreter, struct editor *editor) {
         return RC_SUCCESS;
     }
     
+    //ignore number_statement check if continuation
+    //but until then
+    interpreter->continuation = false;
+    
     int rc = _statement(interpreter, editor);
     if (rc != RC_SUCCESS) {
         return rc;
     }
+
+    //suspend check on IF continuation
+    if (interpreter->continuation)
+        return RC_SUCCESS;
 
     //expect CRLF
     if (!_match(interpreter, TOKEN_NEWLINE)) {
@@ -529,6 +541,17 @@ int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
             break;
         } else if (rc != RC_SUCCESS) {
             editor_printf(editor, "ERROR: %d\n", rc);
+        }
+        
+        while (interpreter->continuation) {
+            rc = _line(interpreter, editor);
+            if (rc == RC_BYE) {
+                editor_printf(editor, "BYE!\n");
+                break;
+            } else if (rc != RC_SUCCESS) {
+                editor_printf(editor, "ERROR: %d\n", rc);
+            }
+
         }
     }
 
