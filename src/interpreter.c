@@ -2,6 +2,7 @@
 #include <tinybasic/common.h>
 #include <tinybasic/scanner.h>
 #include <tinybasic/editor.h>
+#include <tinybasic/variables.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -9,7 +10,7 @@
 #include <stdio.h>
 
 // Prototypes
-int _eval(struct interpreter *interpreter, uint16_t *value);
+int _eval(struct interpreter *interpreter, int16_t *value);
 
 // Checks if the stream of tokens is empty/depleted
 static bool _empty(struct interpreter *interpreter) {
@@ -43,15 +44,21 @@ void _reinit(struct interpreter *interpreter, const char *source) {
 }
 
 // Constructs a interpreter
-struct interpreter interpreter_init() {
+struct interpreter interpreter_init(struct variables *variables) {
     return (struct interpreter){
         .source = "",
         .scanner = scanner_init(""),
         .current = TOKEN_EOF,
+        .variables = variables,
+        .mode = INTERPRETER_MODE_DIRECT,
     };
 }
 
-static int _number(struct interpreter *interpreter, uint16_t *value) {
+void interpreter_destroy(struct interpreter *interpreter) {
+
+}
+
+static int _number(struct interpreter *interpreter, int16_t *value) {
     if (!_match(interpreter, TOKEN_NUMBER)) {
         *value = 0;
         return RC_ERR_EXPECTED_NUMBER;
@@ -72,15 +79,15 @@ static int _number(struct interpreter *interpreter, uint16_t *value) {
         }
     }
 
-    *value = (uint16_t)result;
+    *value = (int16_t)result;
     return RC_SUCCESS;
 }
 
-static int _grouping(struct interpreter *interpreter, uint16_t *value) {
+static int _grouping(struct interpreter *interpreter, int16_t *value) {
     _next(interpreter); //eat (
         
     // eval the expression inside the parens
-    uint16_t tmp = 0;
+    int16_t tmp = 0;
     int rc = _eval(interpreter, &tmp);
     if (rc != RC_SUCCESS) {
         *value = 0;
@@ -92,12 +99,13 @@ static int _grouping(struct interpreter *interpreter, uint16_t *value) {
         *value = 0;
         return RC_ERR_EXPECTED_RPAREN;
     }
+    _next(interpreter);
         
     *value = tmp;
     return RC_SUCCESS;
 }
 
-static int _primary(struct interpreter *interpreter, uint16_t *value) {
+static int _primary(struct interpreter *interpreter, int16_t *value) {
     if (_match(interpreter, TOKEN_NUMBER)) {
         return _number(interpreter, value);
     } else if (_match(interpreter, TOKEN_LPAREN)) {
@@ -108,8 +116,8 @@ static int _primary(struct interpreter *interpreter, uint16_t *value) {
     return RC_ERR_EXPECTED_EXPR;
 }
 
-static int _factor(struct interpreter *interpreter, uint16_t *value) {
-    uint16_t factor = 0;
+static int _factor(struct interpreter *interpreter, int16_t *value) {
+    int16_t factor = 0;
     int rc = _primary(interpreter, &factor);
     if (rc != RC_SUCCESS) {
         *value = 0;
@@ -119,7 +127,7 @@ static int _factor(struct interpreter *interpreter, uint16_t *value) {
     while (_match(interpreter, TOKEN_STAR) || _match(interpreter, TOKEN_SLASH)) {
         struct token op = _next(interpreter);
 
-        uint16_t tmp = 0;
+        int16_t tmp = 0;
         rc = _primary(interpreter, &tmp);
         if (rc != RC_SUCCESS) {
             *value = 0;
@@ -137,10 +145,10 @@ static int _factor(struct interpreter *interpreter, uint16_t *value) {
     return RC_SUCCESS;
 }
 
-static int _term(struct interpreter *interpreter, uint16_t *value) {
+static int _term(struct interpreter *interpreter, int16_t *value) {
 
     // leading +/- sign?
-    uint16_t sign = 1;
+    int16_t sign = 1;
     if (_match(interpreter, TOKEN_PLUS)) {
         //just eat
         _next(interpreter);
@@ -150,7 +158,7 @@ static int _term(struct interpreter *interpreter, uint16_t *value) {
         sign = -1;
     }
 
-    uint16_t term = 0;
+    int16_t term = 0;
     int rc = _factor(interpreter, &term);
     if (rc != RC_SUCCESS) {
         *value = 0;
@@ -161,7 +169,7 @@ static int _term(struct interpreter *interpreter, uint16_t *value) {
     while (_match(interpreter, TOKEN_PLUS) || _match(interpreter, TOKEN_MINUS)) {
         struct token op = _next(interpreter);
 
-        uint16_t tmp = 0;
+        int16_t tmp = 0;
         rc = _factor(interpreter, &tmp);
         if (rc != RC_SUCCESS) {
             *value = 0;
@@ -180,7 +188,7 @@ static int _term(struct interpreter *interpreter, uint16_t *value) {
 }
 
 
-int _eval(struct interpreter *interpreter, uint16_t *value) {
+int _eval(struct interpreter *interpreter, int16_t *value) {
     
     return _term(interpreter, value);
 }
@@ -194,7 +202,7 @@ static int _print(struct interpreter *interpreter, struct editor *editor) {
         int len = string.len - 2; //account for ""
         editor_printf(editor, "%.*s", len, start);
     } else {
-        uint16_t value = 0;
+        int16_t value = 0;
         int rc = _eval(interpreter, &value);
         if (rc != RC_SUCCESS) {
             return rc;
@@ -214,7 +222,7 @@ static int _print(struct interpreter *interpreter, struct editor *editor) {
             int len = string.len - 2; //account for ""
             editor_printf(editor, "%.*s", len, start);
         } else {
-            uint16_t value = 0;
+            int16_t value = 0;
             int rc = _eval(interpreter, &value);
             if (rc != RC_SUCCESS) {
                 return rc;
@@ -229,18 +237,61 @@ static int _print(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+static int _let(struct interpreter *interpreter, struct editor *editor) {
+    _next(interpreter); //eat LET
 
+    //var
+    if (!_match(interpreter, TOKEN_VARIABLE)) {
+        return RC_ERR_EXPECTED_VARIABLE;
+    }
+    struct token var = _next(interpreter);
+
+    //=
+    if (!_match(interpreter, TOKEN_EQUAL)) {
+        return RC_ERR_EXPECTED_EQUAL;
+    }
+    _next(interpreter); //eat =
+
+    //expression
+    int16_t value = 0;
+    int rc = _eval(interpreter, &value);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    editor_printf(editor, "Saving '%c' = %d goes here\n", interpreter->source[var.pos], value);
+
+    //do the thing
+    return RC_SUCCESS;
+}
 
 static int _statement(struct interpreter *interpreter, struct editor *editor) {
     if (_match(interpreter, TOKEN_PRINT)) {
         return _print(interpreter, editor);
+    } else if (_match(interpreter, TOKEN_LET)) {
+        return  _let(interpreter, editor);
     } else {
         return RC_ERR_EXPECTED_STATEMENT;
     }
 }
 
 static int _line(struct interpreter *interpreter, struct editor *editor) {
-    return _statement(interpreter, editor);
+    if (_match(interpreter, TOKEN_NEWLINE) || _match(interpreter, TOKEN_EOF)) {
+        return RC_SUCCESS;
+    }
+    
+    int rc = _statement(interpreter, editor);
+    if (rc != RC_SUCCESS) {
+        return rc;
+    }
+
+    //expect CRLF
+    if (!_match(interpreter, TOKEN_NEWLINE)) {
+        return RC_ERR_EXPECTED_NEWLINE;
+    }
+    _next(interpreter);
+
+    return RC_SUCCESS;
 }
 
 static int interpret_line(struct interpreter *interpreter, struct editor *editor, char *line) {

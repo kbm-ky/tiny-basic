@@ -9,7 +9,7 @@
 
 struct test {
     char *input;
-    uint16_t want;
+    int16_t want;
 };
 
 int test_eval() {
@@ -62,10 +62,10 @@ int test_eval() {
     };
 
     enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
-    struct interpreter interpreter = interpreter_init();
+    struct interpreter interpreter = interpreter_init(NULL);
     
     for (int i = 0; i < NUM_TESTS; i++) {
-        uint16_t got = 0;
+        int16_t got = 0;
         _reinit(&interpreter, tests[i].input);
         int rc = _eval(&interpreter, &got);
         //check return code

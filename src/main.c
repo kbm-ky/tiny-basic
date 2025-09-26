@@ -17,12 +17,20 @@
 
 int main() {
     struct editor editor =  editor_init();
-    struct interpreter interpreter = interpreter_init();
+    struct variables variables = {};
+    int rc = variables_init(&variables);
+    if (rc != RC_SUCCESS) {
+        printf("ERROR: Cannot create variables!\n");
+        return 1;
+    }
+
+    struct interpreter interpreter = interpreter_init(&variables);
 
     editor_printf(&editor, "Welcome to TINY-BASIC!\n");
+    rc = interpreter_loop(&interpreter, &editor);
 
-    int rc = interpreter_loop(&interpreter, &editor);
-
+    interpreter_destroy(&interpreter);
+    variables_destroy(&variables);
     editor_destroy(&editor);
 
     return 0;
