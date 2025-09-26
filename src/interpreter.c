@@ -374,14 +374,18 @@ static int _if(struct interpreter *interpreter, struct editor *editor) {
 static int _goto(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat GOTO
 
+    if (interpreter->mode == INTERPRETER_MODE_DIRECT) {
+        editor_printf(editor, "Cannot GOTO in DIRECT MODE\n");
+        return RC_ERR_ILLEGAL_DIRECT;
+    }
+
     int16_t expr = 0;
     int rc = _eval(interpreter, &expr);
     if (rc != RC_SUCCESS) {
         return rc;
     }
 
-    //do something here
-    editor_printf(editor, "TODO: GOTO %d\n", expr);
+    interpreter->pc = expr;
 
     //use a sub interpreter?
     return RC_SUCCESS;
@@ -455,14 +459,20 @@ static int _input(struct interpreter *interpreter, struct editor *editor) {
 static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat GOTO
 
+    if (interpreter->mode == INTERPRETER_MODE_DIRECT) {
+        editor_printf(editor, "Cannot GOSUB in DIRECT MODE\n");
+        return RC_ERR_ILLEGAL_DIRECT;
+    }
+
     int16_t expr = 0;
     int rc = _eval(interpreter, &expr);
     if (rc != RC_SUCCESS) {
         return rc;
     }
 
-    //do something here
-    editor_printf(editor, "TODO: GOSUB %d\n", expr);
+    //set program counter and return address
+    interpreter->return_address = interpreter->pc; //<This is wrong, may need stack
+    interpreter->pc = expr;
 
     return RC_SUCCESS;
 }
@@ -470,40 +480,75 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
 static int _return(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter);  //eat RETURN
 
-    editor_printf(editor, "TODO: RETURN to somewhere, somehow\n");
+    if (interpreter->mode == INTERPRETER_MODE_DIRECT) {
+        editor_printf(editor, "Cannot RETURN in DIRECT MODE\n");
+        return RC_ERR_ILLEGAL_DIRECT;
+    }
+
+    //TODO: some sort of stack here
     return RC_SUCCESS;
 }
 
 static int _clear(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat CLEAR
 
-    editor_printf(editor, "TODO: CLEAR program memory here\n");
+    if (interpreter->mode == INTERPRETER_MODE_INDIRECT) {
+        editor_printf(editor, "Cannot CLEAR  in INDIRECT MODE\n");
+        return RC_ERR_ILLEGAL_INDIRECT;
+    }
+
+    //TODO: something to clear the program
+
     return RC_SUCCESS;
 }
 
 static int _list(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat LIST
 
-    editor_printf(editor, "TODO: LIST program memory here\n");
+    if (interpreter->mode == INTERPRETER_MODE_INDIRECT) {
+        editor_printf(editor, "Cannot LIST in INDIRECT MODE\n");
+        return RC_ERR_ILLEGAL_INDIRECT;
+    }
+
+    //TODO: something to list the program
+
     return RC_SUCCESS;
 }
 
 static int _run(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat RUN
 
-    editor_printf(editor, "TODO: RUN program memory here\n");
+    if (interpreter->mode == INTERPRETER_MODE_INDIRECT) {
+        editor_printf(editor, "Cannot RUN in INDIRECT MODE\n");
+        return RC_ERR_ILLEGAL_INDIRECT;
+    }
+
+    //TODO: run the program here
+
     return RC_SUCCESS;
 }
 
 static int _end(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat END
 
-    editor_printf(editor, "TODO: END does something here\n");
+    if (interpreter->mode == INTERPRETER_MODE_DIRECT) {
+        editor_printf(editor, "Cannot END in DIRECT MODE\n");
+        return RC_ERR_ILLEGAL_DIRECT;
+    }
+    
+    //TODO: end the running program
+
     return RC_SUCCESS;
 }
 
 static int _bye(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat bye
+    
+    if (interpreter->mode == INTERPRETER_MODE_INDIRECT) {
+        editor_printf(editor, "Cannot BYE in INDRECT MODE\n");
+        return RC_ERR_ILLEGAL_INDIRECT;
+    }
+
     return RC_BYE;
 }
 
