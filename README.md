@@ -44,7 +44,7 @@ This variant/dialect of Tiny Basic supports the following statements:
 
 Expressions are limited to numbers and variable names (but `PRINT` can also print strings).  
 
-Numbers are limited to 16-bit integers.  (Don't be surprised if you overflow/underflow doint math operations.)  
+Numbers are limited to 16-bit integers.  (Don't be surprised if you overflow/underflow doing math operations.)  
 
 Mathematical operators are `+`, `-`, `*`, and `/` (integer division of course).  
 
