@@ -11,6 +11,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+enum {
+    FLAG_GOTO = (1<<0),
+    FLAG_GOSUB = (1<<1),
+    FLAG_RETURN = (1<<2),
+    FLAG_END = (1<<3),
+};
+
 // Prototypes
 int _eval(struct interpreter *interpreter, int16_t *value);
 static int _statement(struct interpreter *interpreter, struct editor *editor);
@@ -388,9 +395,14 @@ static int _goto(struct interpreter *interpreter, struct editor *editor) {
         return rc;
     }
 
-    interpreter->pc = expr;
+    if (expr < 0 || expr > UINT8_MAX) {
+        editor_printf(editor, "Invalid GOTO line number: %d\n", (int)expr);
+        return RC_ERR_BAD_LINE_NUMBER;
+    }
 
-    //use a sub interpreter?
+    interpreter->pc = expr;
+    interpreter->flags |= FLAG_GOTO;
+
     return RC_SUCCESS;
 }
 
@@ -473,6 +485,11 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
         return rc;
     }
 
+    if (expr < 0 || expr > UINT8_MAX) {
+        editor_printf(editor, "Invalid GOSUB line number: %d\n", (int)expr);
+        return RC_ERR_BAD_LINE_NUMBER;
+    }
+
     //set program counter and return address
     rc = stack_push(&interpreter->stack, interpreter->pc);
     if (rc != RC_SUCCESS) {
@@ -480,6 +497,7 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
         return rc;
     }
     interpreter->pc = expr;
+    interpreter->flags |= FLAG_GOSUB;
 
     return RC_SUCCESS;
 }
@@ -499,6 +517,8 @@ static int _return(struct interpreter *interpreter, struct editor *editor) {
         return rc;
     }
     interpreter->pc = value;
+    interpreter->flags |= FLAG_RETURN;
+
     return RC_SUCCESS;
 }
 
@@ -541,7 +561,8 @@ static int _run(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_INDIRECT;
     }
 
-    //TODO: run the program here
+    //kick off indirect mode and run resident program
+    interpreter->mode = INTERPRETER_MODE_INDIRECT;
 
     return RC_SUCCESS;
 }
@@ -554,7 +575,7 @@ static int _end(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_DIRECT;
     }
     
-    //TODO: end the running program
+    interpreter->flags |= FLAG_END;
 
     return RC_SUCCESS;
 }
@@ -666,6 +687,58 @@ static int interpret_line(struct interpreter *interpreter, struct editor *editor
     return _line(interpreter, editor);
 }
 
+static int _run_program(struct program *program) {
+    //kick off new sub interpreter
+    struct editor editor =  editor_init();
+    struct variables variables = {};
+    int rc = variables_init(&variables);
+    if (rc != RC_SUCCESS) {
+        printf("ERROR: Cannot create variables!\n");
+        return rc;
+    }
+
+    struct interpreter interpreter = interpreter_init(&variables, program);
+    interpreter.mode = INTERPRETER_MODE_INDIRECT;
+
+    // Iterate over program here
+    for (interpreter.pc = 0; interpreter.pc < PROGRAM_ROWS; ) {
+        interpreter.flags = 0;
+        char *line = program_get_line(program, (uint8_t)interpreter.pc);
+        rc = interpret_line(&interpreter, &editor, line);
+        if (rc != RC_SUCCESS) {
+            editor_printf(&editor, "ERROR: &d\n", rc);
+            break;
+        }
+        while (interpreter.continuation) {
+            interpreter.continuation = false;
+            rc = _line(&interpreter, &editor);
+            if (rc != RC_SUCCESS) {
+                editor_printf(&editor, "ERROR: %d\n", rc);
+            }
+        }
+
+        if (interpreter.flags & FLAG_END) {
+            editor_printf(&editor, "DEBUG: Should end!\n");
+            break;
+        }
+
+        if (interpreter.flags) {
+            //do not modify program counter, it has been fiddled with already
+            interpreter.flags = 0;
+            continue;
+        }
+
+        interpreter.pc++;
+    }
+    // take program counter into account...
+    
+    interpreter_destroy(&interpreter);
+    variables_destroy(&variables);
+    editor_destroy(&editor);
+
+    return rc;
+}
+
 int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
     while (1) {
         char *line = NULL;
@@ -695,7 +768,16 @@ int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
             } else if (rc != RC_SUCCESS) {
                 editor_printf(editor, "ERROR: %d\n", rc);
             }
+        }
 
+        //go to indirect mode?
+        if (interpreter->mode == INTERPRETER_MODE_INDIRECT) {
+            interpreter->mode = INTERPRETER_MODE_DIRECT;
+            rc = _run_program(interpreter->program);
+            if (rc != RC_SUCCESS) {
+                editor_printf(editor, "Error running program!");
+                editor_printf(editor, "ERROR: %d\n", rc);
+            }
         }
     }
 

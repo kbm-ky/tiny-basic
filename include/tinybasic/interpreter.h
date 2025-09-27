@@ -25,6 +25,7 @@ struct interpreter {
     int pc;
     struct stack stack;
     struct program *program;
+    uint8_t flags;
 };
 
 
