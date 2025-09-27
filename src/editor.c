@@ -11,16 +11,12 @@
 #include <string.h>
 #include <stdarg.h>
 
-// enum { 
-//     MAX_BUFFER_SIZE = 80,
-//     MAX_INPUT_SIZE = 72,
-//     MAX_INPUT_STRLEN = MAX_BUFFER_SIZE -1,
-// };
-
+// Initializes editor structure
 struct editor editor_init() {
     return (struct editor) {};
 }
 
+// Destroys editor
 void editor_destroy(struct editor *editor) {
     if (editor->line != NULL) {
         free(editor->line);
@@ -28,6 +24,7 @@ void editor_destroy(struct editor *editor) {
     }
 }
 
+// Prompts the user for input
 int editor_prompt(struct editor *editor, char **string, char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -44,14 +41,17 @@ int editor_prompt(struct editor *editor, char **string, char *format, ...) {
     return RC_SUCCESS;
 }
 
+// Utility to print line
 void editor_println(struct editor *editor, char *string) {
     puts(string);
 }
 
+// Utility to print
 void editor_print(struct editor *editor, char *string) {
     printf("%s", string);
 }
 
+// Utility to printf
 int editor_printf(struct editor *editor, char *format, ...) {
     va_list args;
     va_start(args, format);

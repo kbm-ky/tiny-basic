@@ -62,7 +62,7 @@ int test_eval() {
     };
 
     enum { NUM_TESTS = sizeof(tests) / sizeof(struct test), };
-    struct interpreter interpreter = interpreter_init(NULL);
+    struct interpreter interpreter = interpreter_init(NULL, NULL);
     
     for (int i = 0; i < NUM_TESTS; i++) {
         int16_t got = 0;

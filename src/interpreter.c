@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 enum {
     FLAG_GOTO = (1<<0),
@@ -18,9 +19,11 @@ enum {
     FLAG_END = (1<<3),
 };
 
-// Prototypes
+// Forward declarations owing to recursive nature of parser
 int _eval(struct interpreter *interpreter, int16_t *value);
 static int _statement(struct interpreter *interpreter, struct editor *editor);
+
+// Utility functions
 
 // Checks if the stream of tokens is empty/depleted
 static bool _empty(struct interpreter *interpreter) {
@@ -46,6 +49,7 @@ static bool _match(struct interpreter *interpreter, enum token_kind kind) {
     return interpreter->current.kind == kind;
 }
 
+// Match relative operator
 static bool _match_relop(struct interpreter *interpreter) {
     struct token tok = _peek(interpreter);
     switch (tok.kind) {
@@ -83,14 +87,19 @@ struct interpreter interpreter_init(struct variables *variables, struct program 
     };
 }
 
+// Destroys interpreter
 void interpreter_destroy(struct interpreter *interpreter) {
 
 }
 
+// Spawns subinterpreter
 struct interpreter _subinterpreter(struct interpreter *interpreter) {
     return *interpreter;
 }
 
+// Expression parsing and evaluation
+
+// number ::= (0..9)+
 static int _number(struct interpreter *interpreter, int16_t *value) {
     if (!_match(interpreter, TOKEN_NUMBER)) {
         *value = 0;
@@ -116,6 +125,7 @@ static int _number(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
+// grouping ::= '(' expression ')'
 static int _grouping(struct interpreter *interpreter, int16_t *value) {
     _next(interpreter); //eat (
         
@@ -138,6 +148,7 @@ static int _grouping(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
+// var ::= 'A' .. 'Z'
 static int _variable(struct interpreter *interpreter, int16_t *value) {
     struct token token = _next(interpreter);
     int16_t tmp = 0;
@@ -150,6 +161,7 @@ static int _variable(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
+// primary ::= var | number | grouping
 static int _primary(struct interpreter *interpreter, int16_t *value) {
     if (_match(interpreter, TOKEN_NUMBER)) {
         return _number(interpreter, value);
@@ -163,6 +175,7 @@ static int _primary(struct interpreter *interpreter, int16_t *value) {
     return RC_ERR_EXPECTED_EXPR;
 }
 
+// factor ::= primary (* | / ) primary
 static int _factor(struct interpreter *interpreter, int16_t *value) {
     int16_t factor = 0;
     int rc = _primary(interpreter, &factor);
@@ -192,8 +205,8 @@ static int _factor(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
+// term ::= (+ / -)? factor (+ / -) factor
 static int _term(struct interpreter *interpreter, int16_t *value) {
-
     // leading +/- sign?
     int16_t sign = 1;
     if (_match(interpreter, TOKEN_PLUS)) {
@@ -234,15 +247,19 @@ static int _term(struct interpreter *interpreter, int16_t *value) {
     return RC_SUCCESS;
 }
 
-
+// Entrypoint for expression evaluation
 int _eval(struct interpreter *interpreter, int16_t *value) {
-    
     return _term(interpreter, value);
 }
 
+// Statement execution functions
+
+// Prints strings and expression values to the screen
+// print ::= PRINT expr-list
 static int _print(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat PRINT
 
+    // expr-list ::= (STRING | NUMBER) (, (STRING | NUMBER))*
     if (_match(interpreter, TOKEN_STRING)) {
         struct token string = _next(interpreter);
         const char *start = &interpreter->source[string.pos+1]; //peel off leading "
@@ -259,6 +276,7 @@ static int _print(struct interpreter *interpreter, struct editor *editor) {
     }
 
     //while commas...
+    // (, (STRING | NUMBER))*
     while (_match(interpreter, TOKEN_COMMA)) {
         _next(interpreter); //eat ,
         editor_printf(editor, ", ");
@@ -284,6 +302,8 @@ static int _print(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Assigns a value to a variable
+// let ::= LET var = expression
 static int _let(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat LET
 
@@ -315,6 +335,8 @@ static int _let(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Conditional branching structure
+// if ::= IF expression relop expression THEN statement
 static int _if(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat IF
 
@@ -369,7 +391,7 @@ static int _if(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter);
 
     if (condition) {
-        // return _statement(interpreter, editor);
+        // continue handling the then-statement in next loop
         interpreter->continuation = true;
     } else {
         //eat all tokens until end of line....even if syntax is wrong
@@ -381,6 +403,8 @@ static int _if(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Jumps execution the line number yielded by expression
+// goto ::= GOTO expression
 static int _goto(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat GOTO
 
@@ -406,9 +430,12 @@ static int _goto(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Receives input from the user and assigns values to variables
+// input ::= INPUT var-list
 static int _input(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat INPUT
 
+    // var-list ::= var (, var)*
     if (!_match(interpreter, TOKEN_VARIABLE)) {
         return RC_ERR_EXPECTED_VARIABLE;
     }
@@ -439,6 +466,8 @@ static int _input(struct interpreter *interpreter, struct editor *editor) {
 
     variables_set(interpreter->variables, var_name, value);
 
+    // while commas...
+    // (, var)*
     while (_match(interpreter, TOKEN_COMMA)) {
         _next(interpreter);
         if (!_match(interpreter, TOKEN_VARIABLE)) {
@@ -471,6 +500,9 @@ static int _input(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Jumps execution to line number yielded by expression and pushes a return
+// value to the 'call stack'
+// gosub ::= GOSUB expression
 static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat GOSUB
 
@@ -502,6 +534,8 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Returns execution to the line number popped from call stack
+// return ::= RETURN
 static int _return(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter);  //eat RETURN
 
@@ -522,6 +556,8 @@ static int _return(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Clears the program memory
+// clear ::= CLEAR
 static int _clear(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat CLEAR
 
@@ -535,6 +571,8 @@ static int _clear(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Lists the program memory
+// list ::= LIST
 static int _list(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat LIST
 
@@ -553,6 +591,8 @@ static int _list(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Runs the program in memory
+// run ::= RUN
 static int _run(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat RUN
 
@@ -567,6 +607,8 @@ static int _run(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Ends execution of the running program
+// end ::= END
 static int _end(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat END
 
@@ -580,6 +622,8 @@ static int _end(struct interpreter *interpreter, struct editor *editor) {
     return RC_SUCCESS;
 }
 
+// Exits the interpreter in DIRECT mode
+// bye ::= BYE
 static int _bye(struct interpreter *interpreter, struct editor *editor) {
     _next(interpreter); //eat bye
     
@@ -591,6 +635,8 @@ static int _bye(struct interpreter *interpreter, struct editor *editor) {
     return RC_BYE;
 }
 
+// Entrypoint for statement execution
+// statement ::= any of the statements above ...
 static int _statement(struct interpreter *interpreter, struct editor *editor) {
     struct token tok = _peek(interpreter);
     switch (tok.kind) {
@@ -619,10 +665,14 @@ static int _statement(struct interpreter *interpreter, struct editor *editor) {
     case TOKEN_BYE:
         return _bye(interpreter, editor);
     default:
+        editor_printf(editor, "Expected a statement!\n");
         return RC_ERR_EXPECTED_STATEMENT;
     }
 }
 
+// Writes a statement to the line number in memory, or clears it if no statement
+// supplied
+// indirect_line ::= number statement NEWLINE
 static int _indirect_line(struct interpreter *interpreter, struct editor *editor) {
     if (!_match(interpreter, TOKEN_NUMBER)) {
         editor_printf(editor, "Expected NUMBER\n");
@@ -656,6 +706,7 @@ static int _indirect_line(struct interpreter *interpreter, struct editor *editor
     return RC_SUCCESS;
 }
 
+// line ::= statement NEWLINE
 static int _line(struct interpreter *interpreter, struct editor *editor) {
     int rc = _statement(interpreter, editor);
     if (rc != RC_SUCCESS) {
@@ -687,6 +738,7 @@ static int interpret_line(struct interpreter *interpreter, struct editor *editor
     return _line(interpreter, editor);
 }
 
+// Runs program
 static int _run_program(struct program *program) {
     //kick off new sub interpreter
     struct editor editor =  editor_init();
@@ -706,7 +758,7 @@ static int _run_program(struct program *program) {
         char *line = program_get_line(program, (uint8_t)interpreter.pc);
         rc = interpret_line(&interpreter, &editor, line);
         if (rc != RC_SUCCESS) {
-            editor_printf(&editor, "ERROR: &d\n", rc);
+            editor_printf(&editor, "ERROR: %d\n", rc);
             break;
         }
         while (interpreter.continuation) {
@@ -725,11 +777,10 @@ static int _run_program(struct program *program) {
             //do not modify program counter, it has been fiddled with already
             interpreter.flags = 0;
             continue;
+        } else {
+            interpreter.pc++;
         }
-
-        interpreter.pc++;
     }
-    // take program counter into account...
     
     interpreter_destroy(&interpreter);
     variables_destroy(&variables);
@@ -738,6 +789,7 @@ static int _run_program(struct program *program) {
     return rc;
 }
 
+// Entrypoint for DIRECT mode interpreter
 int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
     while (1) {
         char *line = NULL;
@@ -774,7 +826,7 @@ int interpreter_loop(struct interpreter *interpreter, struct editor *editor) {
             interpreter->mode = INTERPRETER_MODE_DIRECT;
             rc = _run_program(interpreter->program);
             if (rc != RC_SUCCESS) {
-                editor_printf(editor, "Error running program!");
+                editor_printf(editor, "Error running program!\n");
                 editor_printf(editor, "ERROR: %d\n", rc);
             }
         }
