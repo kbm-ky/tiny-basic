@@ -472,7 +472,7 @@ static int _input(struct interpreter *interpreter, struct editor *editor) {
 }
 
 static int _gosub(struct interpreter *interpreter, struct editor *editor) {
-    _next(interpreter); //eat GOTO
+    _next(interpreter); //eat GOSUB
 
     if (interpreter->mode == INTERPRETER_MODE_DIRECT) {
         editor_printf(editor, "Cannot GOSUB in DIRECT MODE\n");
@@ -491,7 +491,7 @@ static int _gosub(struct interpreter *interpreter, struct editor *editor) {
     }
 
     //set program counter and return address
-    rc = stack_push(&interpreter->stack, interpreter->pc);
+    rc = stack_push(&interpreter->stack, interpreter->pc+1);
     if (rc != RC_SUCCESS) {
         editor_printf(editor, "Stack overflow!");
         return rc;
@@ -718,7 +718,6 @@ static int _run_program(struct program *program) {
         }
 
         if (interpreter.flags & FLAG_END) {
-            editor_printf(&editor, "DEBUG: Should end!\n");
             break;
         }
 
