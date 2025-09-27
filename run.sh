@@ -1,1 +1,1 @@
-./build.sh && ./main.exe
+./build.sh && ./tinybas.exe
