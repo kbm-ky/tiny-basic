@@ -544,7 +544,7 @@ static int _return(struct interpreter *interpreter, struct editor *editor) {
         return RC_ERR_ILLEGAL_DIRECT;
     }
 
-    uint8_t value = 0;
+    int value = 0;
     int rc = stack_pop(&interpreter->stack, &value);
     if (rc != RC_SUCCESS) {
         editor_printf(editor, "Stack underflow!\n");
